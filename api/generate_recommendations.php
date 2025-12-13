@@ -31,10 +31,11 @@ function validatePriority($priority) {
 
 function generateRecommendations($profileId, $conn) {
     // Get user's hair profile and user info (including age)
+    // Get user's hair profile and user info (including age)
+    // Removed fn_get_age_group usage to avoid issues if function is missing on DB
     $profileStmt = $conn->prepare("
         SELECT uhp.*, u.date_of_birth, 
-               TIMESTAMPDIFF(YEAR, u.date_of_birth, CURDATE()) as current_age,
-               fn_get_age_group(u.date_of_birth) as age_group
+               TIMESTAMPDIFF(YEAR, u.date_of_birth, CURDATE()) as current_age
         FROM user_hair_profiles uhp
         INNER JOIN users u ON uhp.user_id = u.user_id
         WHERE uhp.profile_id = ?
@@ -43,6 +44,24 @@ function generateRecommendations($profileId, $conn) {
     $profileStmt->execute();
     $profile = $profileStmt->get_result()->fetch_assoc();
     $profileStmt->close();
+    
+    // Helper helper to calculate age group in PHP
+    if (!function_exists('calculateAgeGroup')) {
+        function calculateAgeGroup($age) {
+            if ($age === null) return null;
+            if ($age < 13) return 'child';
+            if ($age >= 13 && $age <= 19) return 'teen';
+            if ($age >= 20 && $age <= 35) return 'young_adult';
+            if ($age >= 36 && $age <= 50) return 'adult';
+            if ($age >= 51 && $age <= 65) return 'middle_aged';
+            return 'senior';
+        }
+    }
+    
+    // Add age_group to profile array for downstream usage
+    if ($profile && isset($profile['current_age'])) {
+        $profile['age_group'] = calculateAgeGroup($profile['current_age']);
+    }
     
     if (!$profile || !$profile['hair_type_id']) {
         return ['products_found' => 0, 'methods_found' => 0, 'pitfalls_found' => 0];
