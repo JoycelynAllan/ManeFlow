@@ -41,14 +41,16 @@ if (isset($_GET['child_id'])) {
     if ($isValid) {
         $userId = $childId; // Switch context to child
     } else {
+        $conn->close();
         ob_clean();
         http_response_code(403);
         echo json_encode(['success' => false, 'error' => 'Unauthorized access to child profile']);
         ob_end_flush();
         exit;
     }
+} else {
+    $conn = getDBConnection();
 }
-$conn = getDBConnection();
 
 // Get user's profile
 $profileStmt = $conn->prepare("SELECT * FROM user_hair_profiles WHERE user_id = ? LIMIT 1");

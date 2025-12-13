@@ -199,11 +199,22 @@ include 'includes/header.php';
     <?php if (!empty($forecasts) || !empty($progressEntries)): ?>
         <div class="forecast-section">
             <?php if (!empty($forecasts)): ?>
-                <h2><i class="fas fa-crystal-ball"></i> Growth Predictions</h2>
+                <?php 
+                // Check if growth rate is negative/zero
+                $hasNegativeGrowth = !empty($forecasts) && isset($forecasts[0]['growth_rate_per_month']) && $forecasts[0]['growth_rate_per_month'] <= 0;
+                ?>
+                <?php if ($hasNegativeGrowth): ?>
+                    <h2><i class="fas fa-chart-line"></i> Growth Trend Forecast</h2>
+                    <div class="alert alert-warning" style="margin-bottom: 1rem;">
+                        <i class="fas fa-exclamation-triangle"></i> Your hair is currently showing a declining trend. The forecast below shows the projected trend if current conditions continue.
+                    </div>
+                <?php else: ?>
+                    <h2><i class="fas fa-crystal-ball"></i> Growth Predictions</h2>
+                <?php endif; ?>
             <?php else: ?>
                 <h2><i class="fas fa-chart-line"></i> Growth History</h2>
                 <div class="alert alert-info" style="margin-bottom: 1rem;">
-                    <i class="fas fa-info-circle"></i> No future forecast available (growth rate neutral or negative), but here is your history.
+                    <i class="fas fa-info-circle"></i> Add more progress entries and click "Generate Forecast" to see predictions.
                 </div>
             <?php endif; ?>
             <div class="forecast-chart-container">

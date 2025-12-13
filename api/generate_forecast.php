@@ -186,27 +186,16 @@ try {
         $deleteStmt->close();
     }
     
-    // If growth rate is not positive, we can't forecast growth towards a goal
-    if ($growthRatePerMonth <= 0.01) {
-        // Return success but with warning message in result, or just 0 forecasts
-         $conn->close();
-         ob_clean();
-         echo json_encode([
-            'success' => true,
-            'message' => "Growth rate is zero or negative. No new forecasts generated.",
-            'forecasts_created' => 0,
-            'growth_rate' => $growthRatePerMonth,
-            'confidence_level' => $confidenceLevel
-        ]);
-        ob_end_flush();
-        exit;
-    }
-    
+    // Generate forecasts even with negative growth to show the trend
+    // Adjust the projection logic based on growth direction
     $forecastsCreated = 0;
     $dataPoints = count($progressEntries);
     
-    // Project up to 24 months or until goal reached
-    for ($i = 1; $i <= 24; $i++) {
+    // For negative/zero growth, limit to 6 months; for positive growth, up to 24 months or goal
+    $maxMonths = ($growthRatePerMonth <= 0) ? 6 : 24;
+    
+    // Project up to maxMonths (6 for negative, 24 for positive) or until goal reached
+    for ($i = 1; $i <= $maxMonths; $i++) {
         try {
             $forecastDate = date('Y-m-d', strtotime("+{$i} months", $currentDate));
             $predictedLength = $currentLength + ($growthRatePerMonth * $i);
@@ -246,8 +235,8 @@ try {
             }
             $insertForecast->close();
             
-            // STOP if goal is reached (and we have generated at least this one entry showing the goal reached)
-            if ($predictedLength >= $goalLength) {
+            // STOP if goal is reached (only for positive growth)
+            if ($growthRatePerMonth > 0 && $predictedLength >= $goalLength) {
                 break;
             }
             
