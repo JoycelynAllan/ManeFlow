@@ -197,12 +197,21 @@ include 'includes/header.php';
         </div>
     <?php endif; ?>
     
-    <?php if (!empty($forecasts)): ?>
+    <?php if (!empty($forecasts) || !empty($progressEntries)): ?>
         <div class="forecast-section">
-            <h2><i class="fas fa-crystal-ball"></i> Growth Predictions</h2>
+            <?php if (!empty($forecasts)): ?>
+                <h2><i class="fas fa-crystal-ball"></i> Growth Predictions</h2>
+            <?php else: ?>
+                <h2><i class="fas fa-chart-line"></i> Growth History</h2>
+                <div class="alert alert-info" style="margin-bottom: 1rem;">
+                    <i class="fas fa-info-circle"></i> No future forecast available (growth rate neutral or negative), but here is your history.
+                </div>
+            <?php endif; ?>
             <div class="forecast-chart-container">
                 <canvas id="forecastChart"></canvas>
             </div>
+            
+            <?php if (!empty($forecasts)): ?>
             <div class="forecast-list">
                 <?php foreach ($forecasts as $forecast): ?>
                     <div class="forecast-card">
@@ -222,6 +231,7 @@ include 'includes/header.php';
                     </div>
                 <?php endforeach; ?>
             </div>
+            <?php endif; ?>
         </div>
     <?php else: ?>
         <div class="alert alert-info">
@@ -254,7 +264,7 @@ include 'includes/header.php';
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    <?php if (!empty($forecasts) && !empty($progressEntries)): ?>
+    <?php if (!empty($forecasts) || !empty($progressEntries)): ?>
     // Create forecast chart
     const ctx = document.getElementById('forecastChart');
     if (ctx) {
