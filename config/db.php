@@ -3,10 +3,28 @@
 require_once __DIR__ . '/env.php';
 
 // Database configuration - use environment variables if available, otherwise use defaults
-define('DB_HOST', env('DB_HOST', '127.0.0.1'));
-define('DB_USER', env('DB_USER', 'root'));
-define('DB_PASS', env('DB_PASS', ''));
-define('DB_NAME', env('DB_NAME', 'maneflow'));
+// Determine environment
+$isProd = false;
+if (isset($_SERVER['HTTP_HOST'])) {
+    // Check if running on the production server IP or domain
+    $host = $_SERVER['HTTP_HOST'];
+    if (strpos($host, '169.239.251.102') !== false || strpos($host, '159.239.251.102') !== false) { // Covering user provided IP
+         $isProd = true;
+    }
+}
+
+if ($isProd) {
+    define('DB_HOST', env('DB_HOST_PROD', 'localhost'));
+    define('DB_USER', env('DB_USER_PROD', 'joycelyn.allan'));
+    define('DB_PASS', env('DB_PASS_PROD', 'Jalla@123'));
+    define('DB_NAME', env('DB_NAME_PROD', 'webtech_2025A_joycelyn_allan'));
+} else {
+    define('DB_HOST', env('DB_HOST_LOCAL', '127.0.0.1'));
+    define('DB_USER', env('DB_USER_LOCAL', 'root'));
+    define('DB_PASS', env('DB_PASS_LOCAL', ''));
+    define('DB_NAME', env('DB_NAME_LOCAL', 'maneflow'));
+}
+
 define('DB_PORT', env('DB_PORT', 3306));
 
 // Create database connection
