@@ -148,11 +148,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             $childUserId = $conn->insert_id;
                                             error_log("SUCCESS: Child account created with ID: $childUserId, email: $childEmail");
                                             
-                                            // Log the activity if table exists
-                                            $logStmt = $conn->prepare("INSERT INTO parent_child_activity_log (parent_user_id, child_user_id, action_type, action_details) VALUES (?, ?, 'created', ?)");
+                                            // Log the activity if table exists with manual ID
+                                            $logId = 1;
+                                            $maxLogStmt = $conn->prepare("SELECT MAX(log_id) as max_id FROM parent_child_activity_log");
+                                            if ($maxLogStmt) {
+                                                $maxLogStmt->execute();
+                                                $maxLogRes = $maxLogStmt->get_result()->fetch_assoc();
+                                                $logId = ($maxLogRes['max_id'] ?? 0) + 1;
+                                                $maxLogStmt->close();
+                                            }
+                                            
+                                            $logStmt = $conn->prepare("INSERT INTO parent_child_activity_log (log_id, parent_user_id, child_user_id, action_type, action_details) VALUES (?, ?, ?, 'created', ?)");
                                             if ($logStmt) {
                                                 $details = "Created child account for {$childFirstName}";
-                                                $logStmt->bind_param("iis", $userId, $childUserId, $details);
+                                                $logStmt->bind_param("iiis", $logId, $userId, $childUserId, $details);
                                                 $logStmt->execute();
                                                 $logStmt->close();
                                             }
@@ -198,9 +207,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $verifyStmt->close();
         
         if ($isValid) {
-            // Log the deletion activity
-            $logStmt = $conn->prepare("INSERT INTO parent_child_activity_log (parent_user_id, child_user_id, action_type, action_details) VALUES (?, ?, 'deleted', 'Parent deleted child account')");
-            $logStmt->bind_param("ii", $userId, $childId);
+            // Log the deletion activity with manual ID
+            $logId = 1;
+            $maxLogStmt = $conn->prepare("SELECT MAX(log_id) as max_id FROM parent_child_activity_log");
+            if ($maxLogStmt) {
+                $maxLogStmt->execute();
+                $maxLogRes = $maxLogStmt->get_result()->fetch_assoc();
+                $logId = ($maxLogRes['max_id'] ?? 0) + 1;
+                $maxLogStmt->close();
+            }
+            
+            $logStmt = $conn->prepare("INSERT INTO parent_child_activity_log (log_id, parent_user_id, child_user_id, action_type, action_details) VALUES (?, ?, ?, 'deleted', 'Parent deleted child account')");
+            $logStmt->bind_param("iii", $logId, $userId, $childId);
             $logStmt->execute();
             $logStmt->close();
             

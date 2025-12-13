@@ -76,7 +76,7 @@ try {
             LEFT JOIN routine_steps rs ON r.routine_id = rs.routine_id
             LEFT JOIN routine_completion_log rcl ON r.routine_id = rcl.routine_id
             WHERE r.profile_id = ? AND r.is_active = 1
-            GROUP BY r.routine_id
+            GROUP BY r.routine_id, r.profile_id, r.routine_name, r.routine_type, r.description, r.is_active, r.last_update_alert, r.update_frequency_days, r.created_at, r.updated_at
             ORDER BY 
                 CASE r.routine_type
                     WHEN 'morning' THEN 1

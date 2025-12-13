@@ -106,75 +106,67 @@ try {
     $checkStmt->close();
     
     // Determine the date to use
+    // Strategy: Find the next available date going backwards from today
+    // This allows generating history quickly for testing forecasts
     $today = date('Y-m-d');
-    $measurementDate = $today;
+    $candidateDate = $today;
     
-    if ($lastEntry) {
-        $lastDate = $lastEntry['measurement_date'];
-        // If last entry is today or in the future, use yesterday
-        if ($lastDate >= $today) {
-            $measurementDate = date('Y-m-d', strtotime('-1 day', strtotime($lastDate)));
-        } else {
-            // Use today if last entry was in the past
-            $measurementDate = $today;
-        }
+    // Get all existing dates
+    $datesStmt = $conn->prepare("SELECT measurement_date FROM hair_growth_progress WHERE profile_id = ? ORDER BY measurement_date DESC");
+    $datesStmt->bind_param("i", $profile['profile_id']);
+    $datesStmt->execute();
+    $existingDatesResult = $datesStmt->get_result();
+    $existingDates = [];
+    while ($row = $existingDatesResult->fetch_assoc()) {
+        $existingDates[] = $row['measurement_date'];
+    }
+    $datesStmt->close();
+    
+    // Find first date not in existing dates
+    while (in_array($candidateDate, $existingDates)) {
+        $candidateDate = date('Y-m-d', strtotime('-1 day', strtotime($candidateDate)));
     }
     
-    // Check if an entry already exists for this date
-    $existsStmt = $conn->prepare("
-        SELECT progress_id FROM hair_growth_progress 
-        WHERE profile_id = ? AND measurement_date = ?
-    ");
+    $measurementDate = $candidateDate;
+    
+    // Check if we are "updating" (conceptually we are creating new, but if logic falls back to existing, we update)
+    // With the loop above, we will ALWAYS find a new date, so we will ALWAYS Insert.
+    // However, keeping update logic just in case we change strategy later or race conditions occur.
+    
+    $existsStmt = $conn->prepare("SELECT progress_id FROM hair_growth_progress WHERE profile_id = ? AND measurement_date = ?");
     $existsStmt->bind_param("is", $profile['profile_id'], $measurementDate);
     $existsStmt->execute();
-    $existsResult = $existsStmt->get_result();
-    $existing = $existsResult->fetch_assoc();
+    $existing = $existsStmt->get_result()->fetch_assoc();
     $existsStmt->close();
     
     if ($existing) {
         // Update existing entry
-        $updateStmt = $conn->prepare("
-            UPDATE hair_growth_progress 
-            SET hair_length = ?, notes = ? 
-            WHERE progress_id = ?
-        ");
-        if (!$updateStmt) {
-            throw new Exception("Update query failed: " . $conn->error);
-        }
+        $updateStmt = $conn->prepare("UPDATE hair_growth_progress SET hair_length = ?, notes = ? WHERE progress_id = ?");
         $updateStmt->bind_param("dsi", $length, $notes, $existing['progress_id']);
         
         if ($updateStmt->execute()) {
-            $updateStmt->close();
             $updated = true;
         } else {
-            $updateStmt->close();
-            throw new Exception("Failed to update progress entry: " . $updateStmt->error);
+             throw new Exception("Failed to update progress entry: " . $updateStmt->error);
         }
-        // Insert new entry with manual ID generation (workaround for missing AUTO_INCREMENT on PROD)
+        $updateStmt->close();
+    } else {
+        // Insert new entry with manual ID generation
         $maxIdStmt = $conn->prepare("SELECT MAX(progress_id) as max_id FROM hair_growth_progress");
         $maxIdStmt->execute();
         $maxResult = $maxIdStmt->get_result()->fetch_assoc();
         $nextId = ($maxResult['max_id'] ?? 0) + 1;
         $maxIdStmt->close();
 
-        $insertStmt = $conn->prepare("INSERT INTO hair_growth_progress 
-            (progress_id, profile_id, measurement_date, hair_length, notes) 
-            VALUES (?, ?, ?, ?, ?)");
-        
-        if (!$insertStmt) {
-            throw new Exception("Insert query failed: " . $conn->error);
-        }
-        
+        $insertStmt = $conn->prepare("INSERT INTO hair_growth_progress (progress_id, profile_id, measurement_date, hair_length, notes) VALUES (?, ?, ?, ?, ?)");
         $insertStmt->bind_param("iisds", $nextId, $profile['profile_id'], $measurementDate, $length, $notes);
         
         if ($insertStmt->execute()) {
-            $insertStmt->close();
             $updated = false;
         } else {
-            $errorMsg = $insertStmt->error;
-            $insertStmt->close();
-            throw new Exception("Failed to add progress entry: " . $errorMsg);
+            throw new Exception("Failed to add progress entry: " . $insertStmt->error);
         }
+        $insertStmt->close();
     }
     
     // Update profile current length

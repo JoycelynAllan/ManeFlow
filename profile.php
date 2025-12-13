@@ -41,8 +41,16 @@ if (isset($_GET['child_id'])) {
             $userId = $viewingChildId; // Use child's ID for profile operations
             
             // Log activity - parent viewing child profile
-            $logStmt = $conn->prepare("INSERT INTO parent_child_activity_log (parent_user_id, child_user_id, action_type, action_details) VALUES (?, ?, 'viewed_profile', 'Parent viewed child profile')");
-            $logStmt->bind_param("ii", $_SESSION['user_id'], $viewingChildId);
+            $logId = 1;
+            $maxLogStmt = $conn->prepare("SELECT MAX(log_id) as max_id FROM parent_child_activity_log");
+            if ($maxLogStmt) {
+                $maxLogStmt->execute();
+                $maxLogRes = $maxLogStmt->get_result()->fetch_assoc();
+                $logId = ($maxLogRes['max_id'] ?? 0) + 1;
+                $maxLogStmt->close();
+            }
+            $logStmt = $conn->prepare("INSERT INTO parent_child_activity_log (log_id, parent_user_id, child_user_id, action_type, action_details) VALUES (?, ?, ?, 'viewed_profile', 'Parent viewed child profile')");
+            $logStmt->bind_param("iii", $logId, $_SESSION['user_id'], $viewingChildId);
             $logStmt->execute();
             $logStmt->close();
         } else {
@@ -138,8 +146,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $userId = $childId; // Use child's ID for profile operations
             
             // Log activity - parent viewing child profile
-            $logStmt = $conn->prepare("INSERT INTO parent_child_activity_log (parent_user_id, child_user_id, action_type, action_details) VALUES (?, ?, 'viewed_profile', 'Parent viewed child profile')");
-            $logStmt->bind_param("ii", $_SESSION['user_id'], $childId);
+            $logId = 1;
+            $maxLogStmt = $conn->prepare("SELECT MAX(log_id) as max_id FROM parent_child_activity_log");
+            if ($maxLogStmt) {
+                $maxLogStmt->execute();
+                $maxLogRes = $maxLogStmt->get_result()->fetch_assoc();
+                $logId = ($maxLogRes['max_id'] ?? 0) + 1;
+                $maxLogStmt->close();
+            }
+            $logStmt = $conn->prepare("INSERT INTO parent_child_activity_log (log_id, parent_user_id, child_user_id, action_type, action_details) VALUES (?, ?, ?, 'viewed_profile', 'Parent viewed child profile')");
+            $logStmt->bind_param("iii", $logId, $_SESSION['user_id'], $childId);
             $logStmt->execute();
             $logStmt->close();
         } else {
@@ -299,8 +315,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Log activity if this is a child profile being edited by parent
         if (isset($childId) && $isViewingChild) {
-            $logStmt = $conn->prepare("INSERT INTO parent_child_activity_log (parent_user_id, child_user_id, action_type, action_details) VALUES (?, ?, 'edited_profile', 'Parent updated child hair profile')");
-            $logStmt->bind_param("ii", $_SESSION['user_id'], $childId);
+            $logId = 1;
+            $maxLogStmt = $conn->prepare("SELECT MAX(log_id) as max_id FROM parent_child_activity_log");
+            if ($maxLogStmt) {
+                $maxLogStmt->execute();
+                $maxLogRes = $maxLogStmt->get_result()->fetch_assoc();
+                $logId = ($maxLogRes['max_id'] ?? 0) + 1;
+                $maxLogStmt->close();
+            }
+            $logStmt = $conn->prepare("INSERT INTO parent_child_activity_log (log_id, parent_user_id, child_user_id, action_type, action_details) VALUES (?, ?, ?, 'edited_profile', 'Parent updated child hair profile')");
+            $logStmt->bind_param("iii", $logId, $_SESSION['user_id'], $childId);
             $logStmt->execute();
             $logStmt->close();
         }
