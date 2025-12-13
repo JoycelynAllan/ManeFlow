@@ -39,19 +39,14 @@ if (isset($_GET['child_id'])) {
     $childId = (int)$_GET['child_id'];
     $conn = getDBConnection();
     
-    // Verify this child belongs to the current user (parent) using stored procedure
-    $verifyStmt = $conn->prepare("CALL sp_verify_parent_child(?, ?)");
-    $verifyStmt->bind_param("ii", $userId, $childId);
+    // Verify this child belongs to the current user (parent) using direct query
+    // Replacing stored procedure to avoid issues on servers without routine permissions
+    $verifyStmt = $conn->prepare("SELECT user_id FROM users WHERE user_id = ? AND parent_user_id = ? AND is_child_account = 1");
+    $verifyStmt->bind_param("ii", $childId, $userId);
     $verifyStmt->execute();
     $verifyResult = $verifyStmt->get_result();
-    $isValid = $verifyResult->fetch_assoc()['is_valid'] ?? 0;
+    $isValid = $verifyResult->num_rows > 0;
     $verifyStmt->close();
-    
-    // Clear results
-    while ($conn->next_result()) {
-        $conn->store_result();
-    }
-    $conn->close();
     
     if ($isValid) {
         $userId = $childId; // Switch context to child
@@ -155,17 +150,22 @@ try {
             $updateStmt->close();
             throw new Exception("Failed to update progress entry: " . $updateStmt->error);
         }
-    } else {
-        // Insert new entry
+        // Insert new entry with manual ID generation (workaround for missing AUTO_INCREMENT on PROD)
+        $maxIdStmt = $conn->prepare("SELECT MAX(progress_id) as max_id FROM hair_growth_progress");
+        $maxIdStmt->execute();
+        $maxResult = $maxIdStmt->get_result()->fetch_assoc();
+        $nextId = ($maxResult['max_id'] ?? 0) + 1;
+        $maxIdStmt->close();
+
         $insertStmt = $conn->prepare("INSERT INTO hair_growth_progress 
-            (profile_id, measurement_date, hair_length, notes) 
-            VALUES (?, ?, ?, ?)");
+            (progress_id, profile_id, measurement_date, hair_length, notes) 
+            VALUES (?, ?, ?, ?, ?)");
         
         if (!$insertStmt) {
             throw new Exception("Insert query failed: " . $conn->error);
         }
         
-        $insertStmt->bind_param("isds", $profile['profile_id'], $measurementDate, $length, $notes);
+        $insertStmt->bind_param("iisds", $nextId, $profile['profile_id'], $measurementDate, $length, $notes);
         
         if ($insertStmt->execute()) {
             $insertStmt->close();

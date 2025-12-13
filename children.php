@@ -188,15 +188,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $childId = (int)$_POST['child_id'];
         
         // Verify this child belongs to the current user using stored procedure
-        $verifyStmt = $conn->prepare("CALL sp_verify_parent_child(?, ?)");
-        $verifyStmt->bind_param("ii", $userId, $childId);
+        // Verify this child belongs to the current user using direct query
+        // Replacing stored procedure to avoid issues on servers without routine permissions
+        $verifyStmt = $conn->prepare("SELECT user_id FROM users WHERE user_id = ? AND parent_user_id = ? AND is_child_account = 1");
+        $verifyStmt->bind_param("ii", $childId, $userId);
         $verifyStmt->execute();
         $verifyResult = $verifyStmt->get_result();
-        $isValid = $verifyResult->fetch_assoc()['is_valid'] ?? 0;
+        $isValid = $verifyResult->num_rows > 0;
         $verifyStmt->close();
-        while ($conn->next_result()) {
-            $conn->store_result();
-        }
         
         if ($isValid) {
             // Log the deletion activity
@@ -222,39 +221,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Get all children for this parent using stored procedure
 // Get all children for this parent using stored procedure
-$childrenStmt = $conn->prepare("CALL sp_get_parent_children(?)");
+// Get all children for this parent using direct query
+$childrenStmt = $conn->prepare("
+    SELECT 
+        c.user_id,
+        c.first_name,
+        c.last_name,
+        c.date_of_birth,
+        c.gender,
+        TIMESTAMPDIFF(YEAR, c.date_of_birth, CURDATE()) AS current_age,
+        c.created_at AS account_created,
+        CASE 
+          WHEN EXISTS (SELECT 1 FROM user_hair_profiles WHERE user_id = c.user_id) 
+          THEN 1 
+          ELSE 0 
+        END AS has_profile,
+        (SELECT profile_id FROM user_hair_profiles WHERE user_id = c.user_id LIMIT 1) AS profile_id
+    FROM users c
+    WHERE c.parent_user_id = ?
+      AND c.is_child_account = 1
+      AND c.is_active = 1
+    ORDER BY c.created_at DESC
+");
 $childrenStmt->bind_param("i", $userId);
 $childrenStmt->execute();
 $result = $childrenStmt->get_result();
 $children = [];
 while ($row = $result->fetch_assoc()) {
+    // Calculate age group in PHP
+    $age = $row['current_age'];
+    $ageGroup = 'senior';
+    
+    if ($age < 13) $ageGroup = 'child';
+    elseif ($age >= 13 && $age <= 19) $ageGroup = 'teen';
+    elseif ($age >= 20 && $age <= 35) $ageGroup = 'young_adult';
+    elseif ($age >= 36 && $age <= 50) $ageGroup = 'adult';
+    elseif ($age >= 51 && $age <= 65) $ageGroup = 'middle_aged';
+    
+    $row['age_group'] = $ageGroup;
     $children[] = $row;
 }
 $childrenStmt->close();
-
-// Clear any additional result sets from the stored procedure
-while ($conn->more_results() && $conn->next_result()) {
-    $conn->store_result();
-}
-
-// Now process the children to add age groups (after the previous statement is fully closed)
-foreach ($children as &$child) {
-    if (!empty($child['date_of_birth'])) {
-        $ageGroupStmt = $conn->prepare("SELECT fn_get_age_group(?) as age_group");
-        if ($ageGroupStmt) {
-            $ageGroupStmt->bind_param("s", $child['date_of_birth']);
-            $ageGroupStmt->execute();
-            $ageGroupResult = $ageGroupStmt->get_result()->fetch_assoc();
-            $child['age_group'] = $ageGroupResult['age_group'] ?? null;
-            $ageGroupStmt->close();
-        } else {
-             // Fallback if prepare fails
-             error_log("Failed to prepare age group statement: " . $conn->error);
-             $child['age_group'] = null;
-        }
-    }
-}
-unset($child); // Break reference
 
 $conn->close();
 
