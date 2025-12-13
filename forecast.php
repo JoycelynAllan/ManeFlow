@@ -180,8 +180,16 @@ include 'includes/header.php';
                     <p class="estimated-time">
                         <i class="fas fa-clock"></i> 
                         Estimated time to goal: <?php 
-                            $monthsNeeded = ($profile['goal_length'] - $profile['current_length']) / $growthRate;
-                            echo ceil($monthsNeeded) . ' months';
+                            if ($growthRate <= 0.05) {
+                                echo "More data needed";
+                            } else {
+                                $monthsNeeded = ($profile['goal_length'] - $profile['current_length']) / $growthRate;
+                                if ($monthsNeeded > 60) {
+                                    echo "> 5 years";
+                                } else {
+                                    echo ceil($monthsNeeded) . ' months';
+                                }
+                            }
                         ?>
                     </p>
                 <?php endif; ?>
@@ -258,11 +266,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const forecastDataPoints = [];
         
         // Add progress entries
+        let lastActualVal = null;
         progressData.reverse().forEach(entry => {
             labels.push(new Date(entry.measurement_date).toLocaleDateString());
-            actualData.push(parseFloat(entry.hair_length));
+            lastActualVal = parseFloat(entry.hair_length);
+            actualData.push(lastActualVal);
             forecastDataPoints.push(null);
         });
+        
+        // Connect the lines: replace the last null in forecast with the last actual value
+        if (forecastDataPoints.length > 0 && lastActualVal !== null) {
+            forecastDataPoints[forecastDataPoints.length - 1] = lastActualVal;
+        }
         
         // Add forecast points
         forecastData.forEach(forecast => {

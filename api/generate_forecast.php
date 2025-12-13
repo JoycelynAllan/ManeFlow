@@ -170,8 +170,10 @@ try {
         $growthRatePerMonth = -99.99;
     }
     
-    // Generate forecasts for next 6 months
+    // Generate forecasts
+    // We project up to 12 months ahead, or until goal is reached
     $currentLength = $latest['hair_length'];
+    $goalLength = $profile['goal_length'] ?? 999;
     $currentDate = strtotime($latest['measurement_date']);
     $confidenceLevel = min(1.0, max(0.0, count($progressEntries) / 12.0)); // More data = higher confidence, ensure between 0 and 1
     
@@ -183,10 +185,27 @@ try {
         $deleteStmt->close();
     }
     
+    // If growth rate is not positive, we can't forecast growth towards a goal
+    if ($growthRatePerMonth <= 0.01) {
+        // Return success but with warning message in result, or just 0 forecasts
+         $conn->close();
+         ob_clean();
+         echo json_encode([
+            'success' => true,
+            'message' => "Growth rate is zero or negative. No new forecasts generated.",
+            'forecasts_created' => 0,
+            'growth_rate' => $growthRatePerMonth,
+            'confidence_level' => $confidenceLevel
+        ]);
+        ob_end_flush();
+        exit;
+    }
+    
     $forecastsCreated = 0;
     $dataPoints = count($progressEntries);
     
-    for ($i = 1; $i <= 6; $i++) {
+    // Project up to 24 months or until goal reached
+    for ($i = 1; $i <= 24; $i++) {
         try {
             $forecastDate = date('Y-m-d', strtotime("+{$i} months", $currentDate));
             $predictedLength = $currentLength + ($growthRatePerMonth * $i);
@@ -222,11 +241,15 @@ try {
             if ($insertForecast->execute()) {
                 $forecastsCreated++;
             } else {
-                error_log("Failed to insert forecast for month {$i}: " . $insertForecast->error . " | SQL State: " . $conn->sqlstate);
-                error_log("Values: profile_id={$profile['profile_id']}, date={$forecastDate}, length={$predictedLength}, confidence={$confidenceLevel}, points={$dataPoints}, rate={$growthRatePerMonth}");
+                error_log("Failed to insert forecast for month {$i}: " . $insertForecast->error);
+            }
+            $insertForecast->close();
+            
+            // STOP if goal is reached (and we have generated at least this one entry showing the goal reached)
+            if ($predictedLength >= $goalLength) {
+                break;
             }
             
-            $insertForecast->close();
         } catch (Exception $e) {
             error_log("Exception inserting forecast for month {$i}: " . $e->getMessage());
             continue;

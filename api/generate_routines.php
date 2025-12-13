@@ -176,36 +176,55 @@ try {
 
 function generateRoutineSteps($routineType, $profile, $hairTypeInfo, $concerns, $conn) {
     $steps = [];
+    $products = [];
+    $methods = [];
     
     // Get recommended products for this hair type
-    $productsStmt = $conn->prepare("
-        SELECT p.*, phc.compatibility_score
-        FROM products p
-        INNER JOIN product_hair_type_compatibility phc ON p.product_id = phc.product_id
-        WHERE phc.hair_type_id = ? AND phc.compatibility_score >= 7
-        ORDER BY phc.compatibility_score DESC
-        LIMIT 10
-    ");
-    $productsStmt->bind_param("i", $profile['hair_type_id']);
-    $productsStmt->execute();
-    $products = $productsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    $productsStmt->close();
+    if ($conn) {
+        $productsStmt = $conn->prepare("
+            SELECT p.*, phc.compatibility_score
+            FROM products p
+            INNER JOIN product_hair_type_compatibility phc ON p.product_id = phc.product_id
+            WHERE phc.hair_type_id = ? AND phc.compatibility_score >= 7
+            ORDER BY phc.compatibility_score DESC
+            LIMIT 10
+        ");
+        
+        if ($productsStmt) {
+            $productsStmt->bind_param("i", $profile['hair_type_id']);
+            if ($productsStmt->execute()) {
+                $products = $productsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            }
+            $productsStmt->close();
+        } else {
+             error_log("Warning: Failed to prepare products query (tables may be missing): " . $conn->error);
+        }
+    }
     
     // Get recommended methods
-    $methodsStmt = $conn->prepare("
-        SELECT m.*, mhc.effectiveness_score
-        FROM growth_methods m
-        INNER JOIN method_hair_type_compatibility mhc ON m.method_id = mhc.method_id
-        WHERE mhc.hair_type_id = ? AND mhc.effectiveness_score >= 7
-        ORDER BY mhc.effectiveness_score DESC
-        LIMIT 10
-    ");
-    $methodsStmt->bind_param("i", $profile['hair_type_id']);
-    $methodsStmt->execute();
-    $methods = $methodsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    $methodsStmt->close();
+    if ($conn) {
+        $methodsStmt = $conn->prepare("
+            SELECT m.*, mhc.effectiveness_score
+            FROM growth_methods m
+            INNER JOIN method_hair_type_compatibility mhc ON m.method_id = mhc.method_id
+            WHERE mhc.hair_type_id = ? AND mhc.effectiveness_score >= 7
+            ORDER BY mhc.effectiveness_score DESC
+            LIMIT 10
+        ");
+        
+        if ($methodsStmt) {
+            $methodsStmt->bind_param("i", $profile['hair_type_id']);
+            if ($methodsStmt->execute()) {
+                $methods = $methodsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            }
+            $methodsStmt->close();
+        } else {
+            error_log("Warning: Failed to prepare methods query (tables may be missing): " . $conn->error);
+        }
+    }
     
     // Generate steps based on routine type
+    // Fallbacks provided if products/methods are empty
     if ($routineType === 'morning') {
         $steps = [
             ['step_name' => 'Gentle Detangling', 'instructions' => 'Use a wide-tooth comb or fingers to gently detangle hair, starting from ends to roots.', 'duration' => '5-10 minutes'],
