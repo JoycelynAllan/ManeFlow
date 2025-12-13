@@ -54,6 +54,14 @@ if (isset($_GET['child_id'])) {
 
 // Get user's profile
 $profileStmt = $conn->prepare("SELECT * FROM user_hair_profiles WHERE user_id = ? LIMIT 1");
+if (!$profileStmt) {
+    $conn->close();
+    ob_clean();
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'Database error: ' . $conn->error]);
+    ob_end_flush();
+    exit;
+}
 $profileStmt->bind_param("i", $userId);
 $profileStmt->execute();
 $profile = $profileStmt->get_result()->fetch_assoc();
@@ -93,6 +101,9 @@ $concernsStmt->close();
 try {
     // Deactivate old routines
     $deactivateStmt = $conn->prepare("UPDATE hair_care_routines SET is_active = 0 WHERE profile_id = ?");
+    if (!$deactivateStmt) {
+        throw new Exception("Failed to prepare deactivate statement: " . $conn->error);
+    }
     $deactivateStmt->bind_param("i", $profile['profile_id']);
     $deactivateStmt->execute();
     $deactivateStmt->close();
@@ -109,6 +120,9 @@ try {
         $insertRoutine = $conn->prepare("INSERT INTO hair_care_routines 
             (profile_id, routine_name, routine_type, description, is_active, last_update_alert, update_frequency_days) 
             VALUES (?, ?, ?, ?, 1, CURDATE(), 90)");
+        if (!$insertRoutine) {
+            throw new Exception("Failed to prepare insert routine statement: " . $conn->error);
+        }
         $insertRoutine->bind_param("isss", $profile['profile_id'], $routineName, $routineType, $description);
         
         if ($insertRoutine->execute()) {
