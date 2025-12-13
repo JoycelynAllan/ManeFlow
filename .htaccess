@@ -1,0 +1,30 @@
+# ManeFlow .htaccess Configuration
+
+# Enable error reporting (disable in production)
+# php_flag display_errors On
+
+# Prevent directory listing
+Options -Indexes
+
+# Protect sensitive files
+<FilesMatch "\.(sql|md|log)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Set default charset
+AddDefaultCharset UTF-8
+
+# Enable URL rewriting (if needed in future)
+RewriteEngine On
+
+# Redirect to index if directory is accessed
+DirectoryIndex index.php
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+

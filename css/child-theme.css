@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --cartoon-primary: #FF6B6B;
+    --cartoon-secondary: #4ECDC4;
+    --cartoon-accent: #FFE66D;
+    --cartoon-dark: #2C3E50;
+    --cartoon-text: #2C3E50;
+    --cartoon-bg: #F7F9FC;
+}
+
+body {
+    background-color: #f0f8ff;
+    background-image: radial-gradient(#e6e6fa 20%, transparent 20%), radial-gradient(#e6e6fa 20%, transparent 20%);
+    background-position: 0 0, 50px 50px;
+    background-size: 100px 100px;
+}
+
+.container {
+    font-family: 'Fredoka', cursive;
+}
+
+h1, h2, h3, h4, h5, h6, .page-header h1 {
+    font-family: 'Fredoka', cursive;
+    color: var(--cartoon-primary);
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.05);
+}
+
+.page-header h1 {
+    font-size: 3rem;
+    letter-spacing: 1px;
+}
+
+.page-header p {
+    font-size: 1.2rem;
+    color: #555;
+}
+
+.card, .child-card {
+    border-radius: 25px !important;
+    border: 3px solid white;
+    box-shadow: 8px 8px 0px rgba(0,0,0,0.05) !important;
+    background: rgba(255, 255, 255, 0.95);
+    overflow: hidden;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.card:hover, .child-card:hover {
+    transform: translateY(-5px);
+}
+
+.form-group label {
+    font-family: 'Fredoka', cursive;
+    font-weight: 500;
+    color: var(--cartoon-dark);
+    font-size: 1.1rem;
+}
+
+.form-group input, .form-group select {
+    border-radius: 15px;
+    border: 3px solid #eee;
+    padding: 12px 15px;
+    font-family: 'Fredoka', cursive;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.form-group input:focus, .form-group select:focus {
+    border-color: var(--cartoon-secondary);
+    box-shadow: 0 0 0 4px rgba(78, 205, 196, 0.2);
+    transform: translateY(-2px);
+}
+
+.btn {
+    border-radius: 50px;
+    font-family: 'Fredoka', cursive;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 12px 24px;
+    border: none;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+    transform-origin: center;
+}
+
+.btn:hover {
+    transform: scale(1.05);
+}
+
+.btn:active {
+    transform: scale(0.95) translateY(2px);
+    box-shadow: 0 0 0 rgba(0,0,0,0.15);
+}
+
+.btn-primary {
+    background-color: var(--cartoon-secondary) !important;
+    color: white;
+}
+
+.btn-secondary {
+    background-color: #FFD93D !important;
+    color: #5d4037 !important;
+}
+
+.btn-danger {
+    background-color: var(--cartoon-primary) !important;
+}
+
+/* Specific Child Card Styles */
+.child-card {
+    border: 3px solid var(--cartoon-secondary) !important;
+}
+
+.child-card:hover {
+    box-shadow: 8px 8px 0px var(--cartoon-primary) !important;
+    border-color: var(--cartoon-primary) !important;
+}
+
+.alert {
+    border-radius: 20px !important;
+    border-width: 3px !important;
+    font-family: 'Fredoka', cursive;
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.05);
+}
+
+/* Charts and Graphs Container Rounded */
+canvas {
+    border-radius: 15px;
+    padding: 10px;
+    background: white;
+}
