@@ -14,21 +14,19 @@ $userId = $_SESSION['user_id'];
 $isViewingChild = false;
 $childInfo = null;
 
+$conn = getDBConnection();
+
 if (isset($_GET['child_id'])) {
     $childId = (int)$_GET['child_id'];
     
-    // Verify this child belongs to the current user (parent) using stored procedure
-    $verifyStmt = $conn->prepare("CALL sp_verify_parent_child(?, ?)");
-    $verifyStmt->bind_param("ii", $userId, $childId);
+    // Verify this child belongs to the current user (parent) using direct query
+    // Replacing stored procedure to avoid issues on servers without routine permissions
+    $verifyStmt = $conn->prepare("SELECT user_id FROM users WHERE user_id = ? AND parent_user_id = ? AND is_child_account = 1");
+    $verifyStmt->bind_param("ii", $childId, $userId);
     $verifyStmt->execute();
     $verifyResult = $verifyStmt->get_result();
-    $isValid = $verifyResult->fetch_assoc()['is_valid'] ?? 0;
+    $isValid = $verifyResult->num_rows > 0;
     $verifyStmt->close();
-    
-    // Clear results
-    while ($conn->next_result()) {
-        $conn->store_result();
-    }
     
     if ($isValid) {
         $userId = $childId; // Switch context to child
@@ -41,6 +39,7 @@ if (isset($_GET['child_id'])) {
         $childInfo = $childNameStmt->get_result()->fetch_assoc();
         $childNameStmt->close();
     } else {
+        $conn->close();
         header('Location: children.php?error=unauthorized');
         exit;
     }
@@ -52,7 +51,7 @@ $forecasts = [];
 $growthRate = null;
 
 try {
-    $conn = getDBConnection();
+    // $conn is already initialized header
     
     // Get user's profile
     $profileStmt = $conn->prepare("SELECT * FROM user_hair_profiles WHERE user_id = ? LIMIT 1");

@@ -149,7 +149,7 @@ include 'includes/header.php';
             
             <?php if ($error): ?>
                 <div class="alert alert-error">
-                    <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?>
+                    <i class="fas fa-exclamation-circle"></i> <?php echo $error; ?>
                 </div>
             <?php endif; ?>
             
