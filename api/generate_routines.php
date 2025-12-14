@@ -82,15 +82,19 @@ try {
         $routineName = ucfirst(str_replace('_', ' ', $routineType)) . ' Routine';
         $description = "Personalized " . $routineType . " routine";
         
-        $insertRoutine = $conn->prepare("INSERT INTO hair_care_routines (profile_id, routine_name, routine_type, description, is_active, last_update_alert, update_frequency_days) VALUES (?, ?, ?, ?, 1, CURDATE(), 90)");
+        // Generate routine_id manually
+        $getMaxId = $conn->query("SELECT COALESCE(MAX(routine_id), 0) + 1 as next_id FROM hair_care_routines");
+        $nextId = $getMaxId->fetch_assoc()['next_id'];
+        
+        $insertRoutine = $conn->prepare("INSERT INTO hair_care_routines (routine_id, profile_id, routine_name, routine_type, description, is_active, last_update_alert, update_frequency_days) VALUES (?, ?, ?, ?, ?, 1, CURDATE(), 90)");
         if (!$insertRoutine) {
             throw new Exception("Insert failed: " . $conn->error);
         }
         
-        $insertRoutine->bind_param("isss", $profile['profile_id'], $routineName, $routineType, $description);
+        $insertRoutine->bind_param("iisss", $nextId, $profile['profile_id'], $routineName, $routineType, $description);
         
         if ($insertRoutine->execute()) {
-            $routineId = $conn->insert_id;
+            $routineId = $nextId; // Use the manually generated ID
             $routinesCreated++;
             
             $steps = [];
