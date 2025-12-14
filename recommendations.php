@@ -99,7 +99,6 @@ $recStmt = $conn->prepare("
     LEFT JOIN growth_methods m ON ur.method_id = m.method_id
     LEFT JOIN hair_pitfalls pf ON ur.pitfall_id = pf.pitfall_id
     WHERE ur.profile_id = ? AND ur.is_active = 1
-    GROUP BY ur.recommendation_id
     ORDER BY 
         CASE ur.priority
             WHEN 'critical' THEN 1
@@ -114,18 +113,33 @@ $recStmt->execute();
 $recommendations = $recStmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $recStmt->close();
 
-// Organize by type
+// Organize by type and filter duplicates
 $products = [];
 $methods = [];
 $pitfalls = [];
+$seenProducts = [];
+$seenMethods = [];
+$seenPitfalls = [];
 
 foreach ($recommendations as $rec) {
     if ($rec['recommendation_type'] === 'product' && $rec['product_id']) {
-        $products[] = $rec;
+        // Only add if we haven't seen this product_id before
+        if (!in_array($rec['product_id'], $seenProducts)) {
+            $products[] = $rec;
+            $seenProducts[] = $rec['product_id'];
+        }
     } elseif ($rec['recommendation_type'] === 'method' && $rec['method_id']) {
-        $methods[] = $rec;
+        // Only add if we haven't seen this method_id before
+        if (!in_array($rec['method_id'], $seenMethods)) {
+            $methods[] = $rec;
+            $seenMethods[] = $rec['method_id'];
+        }
     } elseif ($rec['recommendation_type'] === 'pitfall_avoidance' && $rec['pitfall_id']) {
-        $pitfalls[] = $rec;
+        // Only add if we haven't seen this pitfall_id before
+        if (!in_array($rec['pitfall_id'], $seenPitfalls)) {
+            $pitfalls[] = $rec;
+            $seenPitfalls[] = $rec['pitfall_id'];
+        }
     }
 }
 
