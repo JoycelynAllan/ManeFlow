@@ -32,6 +32,15 @@ if (isset($_GET['child_id'])) {
     // Verify this child belongs to the current user (parent) using direct query
     // Replacing stored procedure to avoid issues on servers without routine permissions
     $verifyStmt = $conn->prepare("SELECT user_id FROM users WHERE user_id = ? AND parent_user_id = ? AND is_child_account = 1");
+    if (!$verifyStmt) {
+        $conn->close();
+        ob_clean();
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'Database error during verification: ' . $conn->error]);
+        ob_end_flush();
+        exit;
+    }
+    
     $verifyStmt->bind_param("ii", $childId, $userId);
     $verifyStmt->execute();
     $verifyResult = $verifyStmt->get_result();
@@ -40,6 +49,7 @@ if (isset($_GET['child_id'])) {
     
     if ($isValid) {
         $userId = $childId; // Switch context to child
+        // Keep connection open for later use
     } else {
         $conn->close();
         ob_clean();
