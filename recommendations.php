@@ -87,8 +87,7 @@ if ($profile['hair_type_id']) {
 
 // Get recommendations
 $recStmt = $conn->prepare("
-    SELECT DISTINCT ur.recommendation_id, ur.profile_id, ur.product_id, ur.method_id, ur.pitfall_id,
-           ur.recommendation_type, ur.priority, ur.reason, ur.is_active, ur.generated_at,
+    SELECT ur.*, 
            p.product_name, p.brand, p.category as product_category, p.description as product_desc, 
            p.key_ingredients, p.price, p.amazon_link, p.image_url, p.rating as product_rating,
            m.method_name, m.category as method_category, m.description as method_desc,
@@ -100,6 +99,7 @@ $recStmt = $conn->prepare("
     LEFT JOIN growth_methods m ON ur.method_id = m.method_id
     LEFT JOIN hair_pitfalls pf ON ur.pitfall_id = pf.pitfall_id
     WHERE ur.profile_id = ? AND ur.is_active = 1
+    GROUP BY ur.recommendation_id
     ORDER BY 
         CASE ur.priority
             WHEN 'critical' THEN 1
