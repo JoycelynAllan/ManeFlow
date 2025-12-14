@@ -1,21 +1,18 @@
 <?php
-/**
- * Generate personalized hair care routines
- */
-
-ob_start();
-
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+// Try to start session with error handling
+try {
+    if (session_status() === PHP_SESSION_NONE) {
+        @session_start();
+    }
+} catch (Exception $e) {
+    // Session failed, continue anyway
 }
 
 header('Content-Type: application/json');
 
+// Check if we have session
 if (!isset($_SESSION['user_id'])) {
-    ob_clean();
-    http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Not authenticated']);
-    ob_end_flush();
+    echo json_encode(['success' => false, 'error' => 'Not authenticated - session issue']);
     exit;
 }
 
@@ -30,10 +27,7 @@ if (isset($_GET['child_id'])) {
     $verifyStmt = $conn->prepare("SELECT user_id FROM users WHERE user_id = ? AND parent_user_id = ? AND is_child_account = 1");
     if (!$verifyStmt) {
         $conn->close();
-        ob_clean();
-        http_response_code(500);
         echo json_encode(['success' => false, 'error' => 'Verification error: ' . $conn->error]);
-        ob_end_flush();
         exit;
     }
     
@@ -47,10 +41,7 @@ if (isset($_GET['child_id'])) {
         $userId = $childId;
     } else {
         $conn->close();
-        ob_clean();
-        http_response_code(403);
-        echo json_encode(['success' => false, 'error' => 'Unauthorized access to child profile']);
-        ob_end_flush();
+        echo json_encode(['success' => false, 'error' => 'Unauthorized access']);
         exit;
     }
 } else {
@@ -60,10 +51,7 @@ if (isset($_GET['child_id'])) {
 $profileStmt = $conn->prepare("SELECT * FROM user_hair_profiles WHERE user_id = ? LIMIT 1");
 if (!$profileStmt) {
     $conn->close();
-    ob_clean();
-    http_response_code(500);
     echo json_encode(['success' => false, 'error' => 'Profile query failed: ' . $conn->error]);
-    ob_end_flush();
     exit;
 }
 
@@ -74,22 +62,8 @@ $profileStmt->close();
 
 if (!$profile) {
     $conn->close();
-    ob_clean();
-    http_response_code(400);
     echo json_encode(['success' => false, 'error' => 'No profile found']);
-    ob_end_flush();
     exit;
-}
-
-$hairTypeInfo = null;
-if ($profile['hair_type_id']) {
-    $typeStmt = $conn->prepare("SELECT * FROM hair_types WHERE hair_type_id = ?");
-    if ($typeStmt) {
-        $typeStmt->bind_param("i", $profile['hair_type_id']);
-        $typeStmt->execute();
-        $hairTypeInfo = $typeStmt->get_result()->fetch_assoc();
-        $typeStmt->close();
-    }
 }
 
 try {
@@ -154,14 +128,9 @@ try {
     
     $conn->close();
     
-    ob_clean();
     echo json_encode(['success' => true, 'message' => "Generated {$routinesCreated} routines!", 'routines_created' => $routinesCreated]);
-    ob_end_flush();
     
 } catch (Exception $e) {
     if (isset($conn)) $conn->close();
-    ob_clean();
-    http_response_code(500);
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
-    ob_end_flush();
 }
