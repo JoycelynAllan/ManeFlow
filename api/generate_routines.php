@@ -1,16 +1,16 @@
 <?php
-// Try to start session with error handling
+// Tries to start session with error handling
 try {
     if (session_status() === PHP_SESSION_NONE) {
         @session_start();
     }
 } catch (Exception $e) {
-    // Session failed, continue anyway
+
 }
 
 header('Content-Type: application/json');
 
-// Check if we have session
+// Checks if we have session
 if (!isset($_SESSION['user_id'])) {
     echo json_encode(['success' => false, 'error' => 'Not authenticated - session issue']);
     exit;
@@ -82,7 +82,7 @@ try {
         $routineName = ucfirst(str_replace('_', ' ', $routineType)) . ' Routine';
         $description = "Personalized " . $routineType . " routine";
         
-        // Generate routine_id manually
+        // Generates routine_id manually
         $getMaxId = $conn->query("SELECT COALESCE(MAX(routine_id), 0) + 1 as next_id FROM hair_care_routines");
         $nextId = $getMaxId->fetch_assoc()['next_id'];
         
@@ -94,7 +94,7 @@ try {
         $insertRoutine->bind_param("iisss", $nextId, $profile['profile_id'], $routineName, $routineType, $description);
         
         if ($insertRoutine->execute()) {
-            $routineId = $nextId; // Use the manually generated ID
+            $routineId = $nextId; // Uses the manually generated ID
             $routinesCreated++;
             
             $steps = [];

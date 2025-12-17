@@ -1,6 +1,5 @@
 <?php
 /**
- * Environment variable loader
  * Loads variables from .env file into $_ENV and getenv()
  */
 

@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
             hamburger.classList.toggle('active');
         });
 
-        // Close menu when clicking outside
+        // Closes menu when clicking outside
         document.addEventListener('click', function (e) {
             if (!hamburger.contains(e.target) && !navMenu.contains(e.target)) {
                 navMenu.classList.remove('active');
@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Handle dropdown toggles on mobile
+        // Handles dropdown toggles on mobile
         const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
         dropdownToggles.forEach(toggle => {
             toggle.addEventListener('click', function (e) {
@@ -29,20 +29,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     const dropdown = this.closest('.nav-dropdown');
                     const isActive = dropdown.classList.contains('active');
 
-                    // Close all other dropdowns
+                    // Closes all other dropdowns
                     document.querySelectorAll('.nav-dropdown').forEach(d => {
                         if (d !== dropdown) {
                             d.classList.remove('active');
                         }
                     });
 
-                    // Toggle current dropdown
+                    // Toggles current dropdown
                     dropdown.classList.toggle('active', !isActive);
                 }
             });
         });
 
-        // Close dropdowns when clicking outside on desktop
+        // Closes dropdowns when clicking outside on desktop
         if (window.innerWidth > 768) {
             document.addEventListener('click', function (e) {
                 if (!e.target.closest('.nav-dropdown')) {
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Update checkbox value when severity changes
+        // Updates checkbox value when severity changes
         if (severitySelect) {
             severitySelect.addEventListener('change', function () {
                 if (checkbox.checked) {
@@ -114,13 +114,13 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        // Initialize visibility
+        // Initializes visibility
         if (!checkbox.checked && severitySelect) {
             severitySelect.style.display = 'none';
         }
     });
 
-    // Auto-dismiss alerts after 5 seconds
+    // Auto-dismisses alerts after 5 seconds
     const alerts = document.querySelectorAll('.alert');
     alerts.forEach(alert => {
         if (alert.classList.contains('alert-success') || alert.classList.contains('alert-error')) {

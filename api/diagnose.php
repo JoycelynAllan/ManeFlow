@@ -23,7 +23,6 @@ if (isset($_GET['child_id'])) {
     $conn = getDBConnection();
     
     // Verify this child belongs to the current user (parent) using direct query
-    // Replacing stored procedure to avoid issues on servers without routine permissions
     $verifyStmt = $conn->prepare("SELECT user_id FROM users WHERE user_id = ? AND parent_user_id = ? AND is_child_account = 1");
     $verifyStmt->bind_param("ii", $childId, $userId);
     $verifyStmt->execute();
@@ -67,6 +66,7 @@ try {
 
     
     // Split symptoms by type
+    // used AI for this
     $ageSymptomIds = [];
     $genericSymptomIds = [];
     
@@ -76,7 +76,7 @@ try {
         } elseif (strpos($idStr, 'gen_') === 0) {
             $genericSymptomIds[] = (int)str_replace('gen_', '', $idStr);
         } else {
-            // Fallback for legacy calls or plain numeric IDs (assume generic)
+            // Fallback for legacy calls or plain numeric IDs 
             $genericSymptomIds[] = (int)$idStr;
         }
     }
@@ -144,7 +144,7 @@ try {
             $genericCauses = $causesStmt->get_result()->fetch_all(MYSQLI_ASSOC);
             $causesStmt->close();
             
-            // Merge causes (avoid duplicates if possible, but simple append is okay for now)
+            // Merge causes 
             $causes = array_merge($causes, $genericCauses);
             
             // Get solutions for identified generic causes

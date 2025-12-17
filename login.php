@@ -10,7 +10,7 @@ if (isset($_SESSION['user_id'])) {
 $error = '';
 $success = '';
 
-// Check if user just registered
+// Checks if user just registered
 if (isset($_SESSION['registration_success']) && $_SESSION['registration_success']) {
     $success = 'Registration successful! Please login with your credentials.';
     if (isset($_SESSION['registered_email'])) {
@@ -20,13 +20,12 @@ if (isset($_SESSION['registration_success']) && $_SESSION['registration_success'
     unset($_SESSION['registered_email']);
 }
 
-// Check for remember me cookie
+// Checks for remember me cookie
 if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_token'])) {
     $conn = getDBConnection();
     $token = $_COOKIE['remember_token'];
     
-    // Get user by remember token (we'll need to add this to users table or use a separate table)
-    // For now, we'll decode the token to get user info
+    // Gets user by remember token 
     $tokenData = @json_decode(base64_decode($token), true);
     
     if ($tokenData && isset($tokenData['user_id']) && isset($tokenData['hash'])) {
@@ -38,13 +37,13 @@ if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_token'])) {
         
         if ($result->num_rows === 1) {
             $user = $result->fetch_assoc();
-            // Verify token hash matches password hash
+            // Verifies token hash matches password hash
             if (hash_equals($tokenData['hash'], substr($user['password_hash'], 0, 20))) {
                 $_SESSION['user_id'] = $user['user_id'];
                 $_SESSION['email'] = $user['email'];
                 $_SESSION['first_name'] = $user['first_name'];
                 
-                // Update last login
+                // Updates last login
                 $updateStmt = $conn->prepare("UPDATE users SET last_login = NOW() WHERE user_id = ?");
                 $updateStmt->bind_param("i", $user['user_id']);
                 $updateStmt->execute();
@@ -79,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($result->num_rows === 1) {
             $user = $result->fetch_assoc();
             
-            // Check if locked out
+            // Checks if locked out
             if ($user['lockout_until'] && strtotime($user['lockout_until']) > time()) {
                 $remTime = ceil((strtotime($user['lockout_until']) - time()) / 60);
                 $error = "Account locked due to too many failed attempts. Please try again in $remTime minutes or <a href='reset_password.php' style='color: var(--error-color); text-decoration: underline;'>reset your password</a>.";
@@ -104,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     setcookie('remember_token', $token, time() + (30 * 24 * 60 * 60), '/', '', true, true); // HttpOnly and Secure
                 }
                 
-                // Update last login
+                // Updates last login
                 $updateStmt = $conn->prepare("UPDATE users SET last_login = NOW() WHERE user_id = ?");
                 $updateStmt->bind_param("i", $user['user_id']);
                 $updateStmt->execute();

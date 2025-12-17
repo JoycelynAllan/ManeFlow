@@ -3,12 +3,12 @@
  * Generate hair growth forecast
  */
 
-// Start output buffering and error handling
+// Starts output buffering and error handling
 ob_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
-// Register shutdown function to catch fatal errors
+// Registers shutdown function to catch fatal errors
 register_shutdown_function(function() {
     $error = error_get_last();
     if ($error !== NULL && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
@@ -27,7 +27,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Set JSON header immediately
+// Sets JSON header immediately
 header('Content-Type: application/json');
 
 if (!isset($_SESSION['user_id'])) {
@@ -54,7 +54,7 @@ if (isset($_GET['child_id'])) {
     $childId = (int)$_GET['child_id'];
     $conn = getDBConnection();
     
-    // Verify this child belongs to the current user (parent) using direct query
+    // Verifies this child belongs to the current user (parent) using direct query
     // Replacing stored procedure to avoid issues on servers without routine permissions
     $verifyStmt = $conn->prepare("SELECT user_id FROM users WHERE user_id = ? AND parent_user_id = ? AND is_child_account = 1");
     $verifyStmt->bind_param("ii", $childId, $userId);
@@ -83,7 +83,7 @@ if (isset($_GET['child_id'])) {
 try {
     $conn = getDBConnection();
     
-    // Get user's profile
+    // Gets user's profile
     $profileStmt = $conn->prepare("SELECT * FROM user_hair_profiles WHERE user_id = ? LIMIT 1");
     if (!$profileStmt) {
         throw new Exception("Profile query failed: " . $conn->error);
@@ -102,7 +102,7 @@ try {
         exit;
     }
     
-    // Get progress entries - group by date and use the latest entry for each date
+    // Gets progress entries - groups by date and uses the latest entry for each date
     $progressStmt = $conn->prepare("
         SELECT * FROM hair_growth_progress 
         WHERE profile_id = ? 
@@ -118,7 +118,7 @@ try {
     $allEntries = $progressStmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $progressStmt->close();
     
-    // Group by date and keep only the latest entry for each date
+    // Groups by date and keeps only the latest entry for each date
     $progressEntries = [];
     $seenDates = [];
     foreach ($allEntries as $entry) {
@@ -129,7 +129,7 @@ try {
         }
     }
     
-    // Limit to 12 unique dates
+    // Limits to 12 unique dates
     $progressEntries = array_slice($progressEntries, -12);
     
     if (count($progressEntries) < 2) {
@@ -144,7 +144,7 @@ try {
         exit;
     }
     
-    // Calculate growth rate
+    // Calculates growth rate
     $latest = $progressEntries[count($progressEntries) - 1];
     $oldest = $progressEntries[0];
     $daysDiff = (strtotime($latest['measurement_date']) - strtotime($oldest['measurement_date'])) / (60 * 60 * 24);
@@ -171,12 +171,12 @@ try {
         $growthRatePerMonth = -99.99;
     }
     
-    // Generate forecasts
-    // We project up to 12 months ahead, or until goal is reached
+    // Generates forecasts
+    // Projects up to 12 months ahead, or until goal is reached
     $currentLength = $latest['hair_length'];
     $goalLength = $profile['goal_length'] ?? 999;
     $currentDate = strtotime($latest['measurement_date']);
-    $confidenceLevel = min(1.0, max(0.0, count($progressEntries) / 12.0)); // More data = higher confidence, ensure between 0 and 1
+    $confidenceLevel = min(1.0, max(0.0, count($progressEntries) / 12.0)); // More data = higher confidence, ensures between 0 and 1
     
     // Delete old forecasts for this profile
     $deleteStmt = $conn->prepare("DELETE FROM growth_forecasts WHERE profile_id = ?");
@@ -186,15 +186,14 @@ try {
         $deleteStmt->close();
     }
     
-    // Generate forecasts even with negative growth to show the trend
-    // Adjust the projection logic based on growth direction
+    // Generates forecasts even with negative growth to show the trend
     $forecastsCreated = 0;
     $dataPoints = count($progressEntries);
     
-    // For negative/zero growth, limit to 6 months; for positive growth, up to 24 months or goal
+    // Limits to 6 months for negative/zero growth, or up to 24 months or goal
     $maxMonths = ($growthRatePerMonth <= 0) ? 6 : 24;
     
-    // Project up to maxMonths (6 for negative, 24 for positive) or until goal reached
+    // Projects up to maxMonths (6 for negative, 24 for positive) or until goal reached
     for ($i = 1; $i <= $maxMonths; $i++) {
         try {
             $forecastDate = date('Y-m-d', strtotime("+{$i} months", $currentDate));
@@ -235,7 +234,7 @@ try {
             }
             $insertForecast->close();
             
-            // STOP if goal is reached (only for positive growth)
+            // Stops if goal is reached (only for positive growth)
             if ($growthRatePerMonth > 0 && $predictedLength >= $goalLength) {
                 break;
             }

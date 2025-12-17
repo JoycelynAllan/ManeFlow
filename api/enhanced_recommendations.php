@@ -13,10 +13,10 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ob_start();
 
-// Set JSON header immediately
+// Sets the JSON header immediately
 header('Content-Type: application/json');
 
-// Error handler to catch fatal errors
+// An error handler to catch fatal errors
 function handleFatalError() {
     $error = error_get_last();
     if ($error !== NULL && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
@@ -62,7 +62,7 @@ if (!isset($_SESSION['user_id'])) {
 $userId = $_SESSION['user_id'];
 $conn = getDBConnection();
 
-// Get user's profile
+// Gets the user's profile
 $profileStmt = $conn->prepare("SELECT * FROM user_hair_profiles WHERE user_id = ? LIMIT 1");
 $profileStmt->bind_param("i", $userId);
 $profileStmt->execute();
@@ -77,7 +77,7 @@ if (!$profile) {
 }
 
 try {
-    // Get hair type info
+    // Gets the hair type information
     $hairTypeInfo = null;
     if ($profile['hair_type_id']) {
         $typeStmt = $conn->prepare("SELECT type_code, type_name, category FROM hair_types WHERE hair_type_id = ?");
@@ -87,15 +87,15 @@ try {
         $typeStmt->close();
     }
     
-    // Fetch products from database based on hair type compatibility
+    // Fetches the products from database based on hair type compatibility
     $fetcher = new HairDataFetcher($conn);
     $onlineProducts = $fetcher->fetchProducts($profile['hair_type_id'], null);
     $savedCount = $fetcher->saveProductsToDB($onlineProducts);
     
-    // Fetch growth methods from database
+    // Fetches the growth methods from database
     $onlineMethods = $fetcher->fetchGrowthMethods($profile['hair_type_id']);
     
-    // Link products to hair types if needed
+    // Links the products to hair types if needed
     $compatibilityCreated = 0;
     if (!empty($onlineProducts) && $profile['hair_type_id']) {
         foreach ($onlineProducts as $product) {
@@ -103,7 +103,7 @@ try {
             $brand = trim($product['brand'] ?? ($product['source'] ?? 'Unknown'));
             
             if (!empty($productName)) {
-                // Try to find product
+                // Trying to find product
                 $productResult = null;
                 if (!empty($brand) && $brand !== 'Unknown') {
                     $productStmt = $conn->prepare("SELECT product_id FROM products WHERE product_name = ? AND brand = ? LIMIT 1");
@@ -122,7 +122,7 @@ try {
                 }
                 
                 if ($productResult) {
-                    // Check if compatibility exists
+                    // Checks if compatibility exists
                     $compStmt = $conn->prepare("SELECT compatibility_id FROM product_hair_type_compatibility 
                         WHERE product_id = ? AND hair_type_id = ?");
                     $compStmt->bind_param("ii", $productResult['product_id'], $profile['hair_type_id']);
@@ -154,7 +154,8 @@ try {
         }
     }
     
-    // Generate recommendations using database data
+    // Generates recommendations using database data
+    // used AI for this
     $stats = generateRecommendations($profile['profile_id'], $conn);
     
 } catch (Exception $e) {
@@ -193,7 +194,7 @@ if ($profile['hair_type_id']) {
     $tipsStmt->close();
 }
 
-// Build response
+// Builds the response
 $response = [
     'success' => true,
     'message' => "Successfully fetched and filtered products for your hair type!",
@@ -209,7 +210,7 @@ $response = [
     'stats' => $stats
 ];
 
-// Add sample of filtered products
+// Adds a sample of filtered products
 if (!empty($onlineProducts)) {
     $response['filtered_products'] = array_slice($onlineProducts, 0, 5);
     $response['message'] .= " Found " . count($onlineProducts) . " products matching your " . 
@@ -221,7 +222,7 @@ if (!empty($onlineProducts)) {
 
 $conn->close();
 
-// Clear any output and send JSON
+// Clears any output and sends JSON
 ob_clean();
 echo json_encode($response);
 ob_end_flush();

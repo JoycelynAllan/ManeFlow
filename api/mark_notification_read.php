@@ -16,11 +16,12 @@ $conn = getDBConnection();
 $data = json_decode(file_get_contents('php://input'), true);
 
 if (isset($data['mark_all']) && $data['mark_all'] === true) {
-    // Mark all as read
+
+    // Marks all as read
     $stmt = $conn->prepare("UPDATE user_notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0");
     $stmt->bind_param("i", $userId);
 } elseif (isset($data['notification_id'])) {
-    // Mark single as read
+    // Marks single as read
     $notificationId = intval($data['notification_id']);
     $stmt = $conn->prepare("UPDATE user_notifications SET is_read = 1 WHERE notification_id = ? AND user_id = ?");
     $stmt->bind_param("ii", $notificationId, $userId);
@@ -32,7 +33,7 @@ if (isset($data['mark_all']) && $data['mark_all'] === true) {
 }
 
 if ($stmt->execute()) {
-    // Get updated unread count
+    // Gets updated unread count
     $countStmt = $conn->prepare("SELECT COUNT(*) as unread_count FROM user_notifications WHERE user_id = ? AND is_read = 0");
     $countStmt->bind_param("i", $userId);
     $countStmt->execute();

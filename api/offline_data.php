@@ -37,7 +37,7 @@ if (!$profile) {
 $data = [];
 
 try {
-    // Get routines
+    // Gets routines
     if ($dataType === 'all' || $dataType === 'routines') {
         $routinesStmt = $conn->prepare("
             SELECT r.*, rs.*
@@ -53,7 +53,7 @@ try {
         $data['routines'] = $routines;
     }
     
-    // Get recommendations
+    // Gets recommendations
     if ($dataType === 'all' || $dataType === 'recommendations') {
         $recStmt = $conn->prepare("
             SELECT ur.*, p.product_name, p.brand, p.category, p.description,
@@ -86,7 +86,7 @@ try {
         $data['progress'] = $progress;
     }
     
-    // Get educational content marked for offline
+    // Gets educational content marked for offline
     if ($dataType === 'all' || $dataType === 'content') {
         $contentStmt = $conn->prepare("
             SELECT * FROM educational_content 

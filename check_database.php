@@ -1,6 +1,5 @@
 <?php
 /**
- * Database Diagnostic Script
  * Checks if all required tables, columns, and procedures exist for parent-child feature
  */
 
@@ -14,7 +13,7 @@ echo "<!DOCTYPE html><html><head><title>Database Check</title>";
 echo "<style>body{font-family:Arial;padding:20px;} .success{color:green;} .error{color:red;} .warning{color:orange;} table{border-collapse:collapse;width:100%;margin:20px 0;} th,td{border:1px solid #ddd;padding:8px;text-align:left;} th{background:#f0f0f0;}</style>";
 echo "</head><body><h1>Database Diagnostic Check</h1>";
 
-// Check 1: parent_user_id column
+//Check 1: parent_user_id column
 echo "<h2>1. Checking users table columns...</h2>";
 $columns = $conn->query("SHOW COLUMNS FROM users");
 $columnNames = [];
@@ -40,7 +39,7 @@ if ($tableCheck->num_rows > 0) {
     echo "<p class='success'>✓ Table 'parent_child_activity_log' exists</p>";
     $success[] = "parent_child_activity_log table exists";
     
-    // Check columns
+    // Checks columns
     $logColumns = $conn->query("SHOW COLUMNS FROM parent_child_activity_log");
     $logColumnNames = [];
     while ($row = $logColumns->fetch_assoc()) {
@@ -84,7 +83,7 @@ if ($fkCheck && $fkCheck->num_rows > 0) {
     $issues[] = "Foreign key constraint missing";
 }
 
-// Check 5: Test insert (dry run)
+// Check 5: Tests insert statement structure
 echo "<h2>5. Testing INSERT statement structure...</h2>";
 $testStmt = $conn->prepare("INSERT INTO users (email, password_hash, first_name, last_name, gender, date_of_birth, parent_user_id, is_child_account, child_age_when_created, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, 1)");
 if ($testStmt) {
@@ -95,7 +94,7 @@ if ($testStmt) {
     $issues[] = "Cannot prepare INSERT: " . $conn->error;
 }
 
-// Check 6: Check current user
+// Check 6: Checks current user
 echo "<h2>6. Checking current logged-in user...</h2>";
 if (isset($_SESSION['user_id'])) {
     $userId = $_SESSION['user_id'];
@@ -121,11 +120,11 @@ if (isset($_SESSION['user_id'])) {
     echo "<p class='warning'>⚠ No user logged in. Please log in first.</p>";
 }
 
-// Check 7: Test stored procedure call (if it exists)
+// Check 7: Tests stored procedure call (if it exists)
 echo "<h2>7. Testing stored procedure (if exists)...</h2>";
 $procExists = $conn->query("SHOW PROCEDURE STATUS WHERE Db = DATABASE() AND Name = 'sp_add_child_account'");
 if ($procExists && $procExists->num_rows > 0) {
-    // Just check if we can prepare it, don't execute
+    // Just checks if we can prepare it, doesn't execute
     $testProc = $conn->prepare("CALL sp_add_child_account(?, ?, ?, ?, ?)");
     if ($testProc) {
         echo "<p class='success'>✓ Stored procedure can be prepared</p>";

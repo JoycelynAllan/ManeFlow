@@ -1,7 +1,7 @@
 <?php
 require_once 'config/db.php';
 
-// Check if user is logged in
+// Checks if user is logged in
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
@@ -10,14 +10,14 @@ if (!isset($_SESSION['user_id'])) {
 $userId = $_SESSION['user_id'];
 $conn = getDBConnection();
 
-// Get user's hair profile
+// Gets user's hair profile
 $profileStmt = $conn->prepare("SELECT * FROM user_hair_profiles WHERE user_id = ? LIMIT 1");
 $profileStmt->bind_param("i", $userId);
 $profileStmt->execute();
 $profile = $profileStmt->get_result()->fetch_assoc();
 $profileStmt->close();
 
-// Get recommendations count
+// Gets recommendations count
 $recCount = 0;
 if ($profile) {
     $recStmt = $conn->prepare("SELECT COUNT(*) as count FROM user_recommendations WHERE profile_id = ? AND is_active = 1");
@@ -28,7 +28,7 @@ if ($profile) {
     $recStmt->close();
 }
 
-// Get progress entries count
+// Gets progress entries count
 $progressCount = 0;
 if ($profile) {
     $progressStmt = $conn->prepare("SELECT COUNT(*) as count FROM hair_growth_progress WHERE profile_id = ?");

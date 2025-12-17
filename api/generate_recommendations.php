@@ -1,37 +1,35 @@
 <?php
 /**
  * Generate personalized recommendations based on user's hair profile
- * Uses database queries only - no AI
  */
 
 /**
- * Ensure priority is always a valid enum value
+ * Ensures priority is always a valid enum value
  * Returns exactly one of: 'low', 'medium', 'high', 'critical'
  */
 function validatePriority($priority) {
-    // Valid enum values from database schema
+    // Validates enum values from database schema
     $validPriorities = ['low', 'medium', 'high', 'critical'];
     
-    // Handle null, empty, or non-string values
+    // Handles null, empty, or non-string values
     if (empty($priority) || (!is_string($priority) && !is_numeric($priority))) {
         return 'medium'; // Safe default
     }
     
-    // Convert to string and normalize to lowercase
+    // Converts to string and normalizes to lowercase
     $priority = strtolower(trim((string)$priority));
     
-    // Return valid priority or default to 'medium'
+    // Returns valid priority or default to 'medium'
     if (in_array($priority, $validPriorities, true)) {
         return $priority;
     }
     
-    // Always return a valid enum value
+    // Always returns a valid enum value
     return 'medium';
 }
 
 function generateRecommendations($profileId, $conn) {
-    // Get user's hair profile and user info (including age)
-    // Get user's hair profile and user info (including age)
+    // Gets user's hair profile and user info (including age)
     // Removed fn_get_age_group usage to avoid issues if function is missing on DB
     $profileStmt = $conn->prepare("
         SELECT uhp.*, u.date_of_birth, 
@@ -45,7 +43,8 @@ function generateRecommendations($profileId, $conn) {
     $profile = $profileStmt->get_result()->fetch_assoc();
     $profileStmt->close();
     
-    // Helper helper to calculate age group in PHP
+    // Helper function to calculate age group in PHP
+    //Used AI to for this function
     if (!function_exists('calculateAgeGroup')) {
         function calculateAgeGroup($age) {
             if ($age === null) return null;
@@ -58,7 +57,7 @@ function generateRecommendations($profileId, $conn) {
         }
     }
     
-    // Add age_group to profile array for downstream usage
+    // Adds age_group to profile array for downstream usage
     if ($profile && isset($profile['current_age'])) {
         $profile['age_group'] = calculateAgeGroup($profile['current_age']);
     }
@@ -70,7 +69,7 @@ function generateRecommendations($profileId, $conn) {
     $hairTypeId = $profile['hair_type_id'];
     $ageGroup = $profile['age_group'] ?? null;
     
-    // Deactivate old recommendations
+    // Deactivates the old recommendations
     $deactivateStmt = $conn->prepare("UPDATE user_recommendations SET is_active = 0 WHERE profile_id = ?");
     $deactivateStmt->bind_param("i", $profileId);
     $deactivateStmt->execute();
@@ -78,7 +77,7 @@ function generateRecommendations($profileId, $conn) {
     
     $products = [];
     
-    // Get product recommendations based on compatibility and age appropriateness
+    // Gets product recommendations based on compatibility and age appropriateness
     if ($ageGroup) {
         
         $productStmt = $conn->prepare("
@@ -111,9 +110,9 @@ function generateRecommendations($profileId, $conn) {
     $products = $productStmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $productStmt->close();
     
-    // If no products found with compatibility, try to get any products and create compatibility on the fly
+    // If no product is found with compatibility, it tries to get any products and create compatibility on the fly
     if (empty($products)) {
-        // First, try to get products that don't have compatibility for this hair type
+        // First, tries to get products that don't have compatibility for this hair type
         $fallbackStmt = $conn->prepare("
             SELECT p.*, 7 as compatibility_score, 'Auto-generated compatibility' as notes
             FROM products p
@@ -127,7 +126,7 @@ function generateRecommendations($profileId, $conn) {
         $fallbackProducts = $fallbackStmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $fallbackStmt->close();
         
-        // Create compatibility records for fallback products
+        // Creates compatibility records for fallback products
         if (!empty($fallbackProducts)) {
             $insertCompStmt = $conn->prepare("INSERT INTO product_hair_type_compatibility 
                 (product_id, hair_type_id, compatibility_score, notes) 
@@ -141,7 +140,6 @@ function generateRecommendations($profileId, $conn) {
             
             $products = $fallbackProducts;
         } else {
-            // Last resort: get ANY products
             $anyProductsStmt = $conn->prepare("SELECT p.*, 7 as compatibility_score, 'Auto-generated compatibility' as notes FROM products p ORDER BY p.rating DESC LIMIT 10");
             $anyProductsStmt->execute();
             $anyProducts = $anyProductsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -163,7 +161,7 @@ function generateRecommendations($profileId, $conn) {
         }
     }
     
-    // Insert product recommendations
+    // Inserts product recommendations
     if (!empty($products)) {
         $insertRecStmt = $conn->prepare("
             INSERT INTO user_recommendations (profile_id, recommendation_type, product_id, priority, personalized_note, age_consideration, age_modified)
@@ -175,7 +173,7 @@ function generateRecommendations($profileId, $conn) {
                 continue;
             }
             
-            // Set priority based on index
+            // Sets priority based on index
             if ($index < 3) {
                 $priority = 'high';
             } elseif ($index < 6) {
@@ -186,10 +184,10 @@ function generateRecommendations($profileId, $conn) {
             
             $priority = validatePriority($priority);
             
-            // Build personalized note with age considerations
+            //Builds personalized note with age considerations
             $note = "Recommended for your hair type. " . ($product['notes'] ?? 'Compatibility score: ' . ($product['compatibility_score'] ?? 'N/A'));
             
-            // Add age-specific notes if available
+            // Adds age-specific notes if available
             if (!empty($product['product_age_notes'])) {
                 $note .= " " . $product['product_age_notes'];
             }
@@ -199,13 +197,13 @@ function generateRecommendations($profileId, $conn) {
             
             $note = trim($note);
             
-            // Prepare age consideration data
+            // Prepares age consideration data
             $ageConsideration = null;
             $ageModified = 0;
             if ($ageGroup && isset($product['product_age_score'])) {
                 $ageConsideration = "Age group: {$ageGroup}. Age score: " . ($product['product_age_score'] ?? 'N/A');
                 if (isset($product['product_age_score']) && $product['product_age_score'] < 7) {
-                    $ageModified = 1; // Mark as age-modified if score is lower
+                    $ageModified = 1; 
                 }
             }
             
@@ -220,7 +218,7 @@ function generateRecommendations($profileId, $conn) {
         $insertRecStmt->close();
     }
     
-    // Get method recommendations based on compatibility and age suitability
+    // Gets method recommendations based on compatibility and age suitability
     if ($ageGroup) {
         $methodStmt = $conn->prepare("
             SELECT m.*, mhtc.effectiveness_score, mhtc.notes,
@@ -251,7 +249,7 @@ function generateRecommendations($profileId, $conn) {
     $methods = $methodStmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $methodStmt->close();
     
-    // Insert method recommendations
+    // Inserts method recommendations
     if (!empty($methods)) {
         $insertMethodStmt = $conn->prepare("
             INSERT INTO user_recommendations (profile_id, recommendation_type, method_id, priority, personalized_note, age_consideration, age_modified)
@@ -273,10 +271,10 @@ function generateRecommendations($profileId, $conn) {
             
             $priority = validatePriority($priority);
             
-            // Build personalized note with age considerations
+            // Builds personalized note with age considerations
             $note = "Effective method for your hair type. " . ($method['notes'] ?? 'Effectiveness score: ' . ($method['effectiveness_score'] ?? 'N/A'));
             
-            // Add age-specific modifications if available
+            // Adds age-specific modifications if available
             if (!empty($method['method_age_modifications'])) {
                 $note .= " Age-specific: " . $method['method_age_modifications'];
             }
@@ -286,7 +284,7 @@ function generateRecommendations($profileId, $conn) {
             
             $note = trim($note);
             
-            // Prepare age consideration data for methods
+            // Prepares age consideration data for methods
             $ageConsideration = null;
             $ageModified = 0;
             if ($ageGroup && isset($method['method_age_score'])) {
@@ -307,7 +305,7 @@ function generateRecommendations($profileId, $conn) {
         $insertMethodStmt->close();
     }
     
-    // Get pitfalls to avoid
+    // Gets pitfalls to avoid
     $pitfallStmt = $conn->prepare("
         SELECT p.*, phta.risk_level, phta.specific_notes
         FROM hair_pitfalls p
@@ -326,7 +324,7 @@ function generateRecommendations($profileId, $conn) {
     $pitfalls = $pitfallStmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $pitfallStmt->close();
     
-    // Insert pitfall recommendations
+    // Inserts pitfall recommendations
     if (!empty($pitfalls)) {
         $insertPitfallStmt = $conn->prepare("
             INSERT INTO user_recommendations (profile_id, recommendation_type, pitfall_id, priority, personalized_note, age_consideration, age_modified)
@@ -338,10 +336,10 @@ function generateRecommendations($profileId, $conn) {
                 continue;
             }
             
-            // Map risk_level to priority
+            // Maps risk_level to priority
             $riskLevel = isset($pitfall['risk_level']) ? trim($pitfall['risk_level']) : 'high';
             
-            // Age consideration for pitfalls (generally applicable to all ages, but note if age-specific)
+            // Age considerations for pitfalls (generally applicable to all ages, but note if age-specific)
             $ageConsideration = null;
             $ageModified = 0;
             if ($ageGroup) {
@@ -361,7 +359,7 @@ function generateRecommendations($profileId, $conn) {
             $note = "Important to avoid for your hair type. " . ($pitfall['specific_notes'] ?? $pitfall['description'] ?? '');
             $note = trim($note);
             
-            // Age consideration for pitfalls (generally applicable to all ages, but note if age-specific)
+            // Age considerations for pitfalls 
             $ageConsideration = null;
             $ageModified = 0;
             if ($ageGroup) {

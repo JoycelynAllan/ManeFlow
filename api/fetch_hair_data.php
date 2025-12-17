@@ -4,7 +4,7 @@
  * This module scrapes/fetches data from various hair care websites and APIs
  */
 
-// Suppress errors if called as API
+// Suppresses errors if called as API
 if (!defined('INCLUDED')) {
     error_reporting(E_ALL);
     ini_set('display_errors', 0);
@@ -26,7 +26,7 @@ class HairDataFetcher {
     public function fetchProducts($hairType = null, $category = null) {
         $products = [];
         
-        // Get hair type details for better filtering
+        // Gets the hair type details for better filtering
         $hairTypeInfo = null;
         if ($hairType) {
             $typeStmt = $this->conn->prepare("SELECT type_code, type_name, category FROM hair_types WHERE hair_type_id = ?");
@@ -36,7 +36,8 @@ class HairDataFetcher {
             $typeStmt->close();
         }
         
-        // Fetch from multiple sources with better error handling
+        //Used AI for this block
+        // Fetches the products from multiple sources with better error handling
         try {
             $amazonProducts = $this->fetchFromAmazon($hairType, $category, $hairTypeInfo);
             $products = array_merge($products, $amazonProducts);
@@ -51,37 +52,37 @@ class HairDataFetcher {
             error_log("Ulta fetch error: " . $e->getMessage());
         }
         
-        // Use curated product database as fallback
+        // Uses the curated product database as fallback
         if (empty($products)) {
             $products = $this->fetchFromCuratedDatabase($hairType, $category, $hairTypeInfo);
         }
         
-        // Filter products based on hair profile
+        // Filters the products based on hair profile
         $products = $this->filterProductsByHairType($products, $hairTypeInfo);
         
         return $products;
     }
     
     /**
-     * Fetch products from Amazon (using search)
+     * Fetches the products from Amazon (using search)
+     * Used AI here
      */
     private function fetchFromAmazon($hairType = null, $category = null, $hairTypeInfo = null) {
         $products = [];
         
         try {
-            // Build search query based on hair type
+            // Builds search query based on hair type
             $searchTerms = $this->buildSearchTerms($hairType, $category, $hairTypeInfo);
             
-            // Limit to 2 searches to avoid timeout
+            // Limits to 2 searches to avoid timeout
             $searchTerms = array_slice($searchTerms, 0, 2);
             
             foreach ($searchTerms as $term) {
-                // Use a more reliable approach - simulate with curated data
                 // In production, use Amazon Product Advertising API
                 $simulatedProducts = $this->getSimulatedAmazonProducts($term, $hairTypeInfo);
                 $products = array_merge($products, $simulatedProducts);
                 
-                // Small delay
+                // A Small delay
                 usleep(500000); // 0.5 seconds
             }
         } catch (Exception $e) {
@@ -93,12 +94,12 @@ class HairDataFetcher {
     
     /**
      * Get simulated Amazon products (for demonstration)
-     * In production, replace with actual API calls
+     * In production, replaces with actual API calls
      */
     private function getSimulatedAmazonProducts($searchTerm, $hairTypeInfo) {
         $products = [];
         
-        // Curated product list based on hair type
+        // Curates product list based on hair type
         $curatedProducts = [
             [
                 'product_name' => 'SheaMoisture Coconut & Hibiscus Curl & Shine Shampoo',
@@ -109,7 +110,7 @@ class HairDataFetcher {
                 'description' => 'Sulfate-free shampoo for curly and coily hair',
                 'key_ingredients' => 'Coconut Oil, Hibiscus, Shea Butter',
                 'amazon_link' => 'https://www.amazon.com/s?k=sheamoisture+coconut+hibiscus',
-                'image_url' => null, // Placeholder - no image available
+                'image_url' => null, 
                 'source' => 'amazon'
             ],
             [
@@ -121,7 +122,7 @@ class HairDataFetcher {
                 'description' => 'Moisturizing leave-in conditioner for natural hair',
                 'key_ingredients' => 'Shea Butter, Coconut Oil, Jojoba Oil',
                 'amazon_link' => 'https://www.amazon.com/s?k=cantu+shea+butter',
-                'image_url' => null, // Placeholder - no image available
+                'image_url' => null, 
                 'source' => 'amazon'
             ],
             [
@@ -133,7 +134,7 @@ class HairDataFetcher {
                 'description' => 'Deep conditioning mask for hair growth and strength',
                 'key_ingredients' => 'Rosemary, Mint, Biotin, Protein',
                 'amazon_link' => 'https://www.amazon.com/s?k=mielle+rosemary+mint',
-                'image_url' => null, // Placeholder - no image available
+                'image_url' => null, 
                 'source' => 'amazon'
             ],
             [
@@ -145,7 +146,7 @@ class HairDataFetcher {
                 'description' => 'Repairing treatment for damaged hair',
                 'key_ingredients' => 'Bis-Aminopropyl Diglycol Dimaleate',
                 'amazon_link' => 'https://www.amazon.com/s?k=olaplex+no3',
-                'image_url' => null, // Placeholder - no image available
+                'image_url' => null, 
                 'source' => 'amazon'
             ],
             [
@@ -157,18 +158,18 @@ class HairDataFetcher {
                 'description' => 'Pure Jamaican black castor oil for hair growth',
                 'key_ingredients' => '100% Jamaican Black Castor Oil',
                 'amazon_link' => 'https://www.amazon.com/s?k=jamaican+black+castor+oil',
-                'image_url' => null, // Placeholder - no image available
+                'image_url' => null, 
                 'source' => 'amazon'
             ]
         ];
         
-        // Filter based on search term and hair type
+        // Filters based on search term and hair type
         foreach ($curatedProducts as $product) {
             $match = false;
             $searchLower = strtolower($searchTerm);
             $productLower = strtolower($product['product_name'] . ' ' . $product['description']);
             
-            // Check if search term matches
+            // Checks if search term matches
             if (strpos($productLower, $searchLower) !== false || 
                 strpos($searchLower, $product['category']) !== false) {
                 $match = true;
@@ -178,7 +179,8 @@ class HairDataFetcher {
             if ($hairTypeInfo) {
                 $hairCategory = strtolower($hairTypeInfo['category']);
                 if ($hairCategory === 'coily' || $hairCategory === 'curly') {
-                    // Prefer products for curly/coily hair
+
+                    // Checks if the product is for curly/coily hair
                     if (stripos($product['description'], 'curly') !== false ||
                         stripos($product['description'], 'coily') !== false ||
                         stripos($product['description'], 'natural') !== false) {
@@ -196,7 +198,8 @@ class HairDataFetcher {
     }
     
     /**
-     * Fetch products from Ulta (simulated)
+     * Fetches products from Ulta 
+     * Used AI for this function
      */
     private function fetchFromUlta($hairType = null, $category = null, $hairTypeInfo = null) {
         $products = [];
@@ -239,7 +242,8 @@ class HairDataFetcher {
     }
     
     /**
-     * Fetch products from Sephora (simulated)
+     * Fetch products from Sephora 
+     * Used AI for this function
      */
     private function fetchFromSephora($hairType = null, $category = null, $hairTypeInfo = null) {
         $products = [];
@@ -282,7 +286,7 @@ class HairDataFetcher {
     }
     
     /**
-     * Build search terms based on hair type and category
+     * Builds search terms based on hair type and category
      */
     private function buildSearchTerms($hairType = null, $category = null, $hairTypeInfo = null) {
         $terms = [];
@@ -297,7 +301,7 @@ class HairDataFetcher {
             $hairCategory = null;
         }
         
-        // Build search terms based on hair type
+        // Builds search terms based on hair type
         if ($category) {
             $terms[] = $category . ($hairTypeName ? " for " . $hairTypeName : "");
             $terms[] = $category . ($hairTypeCode ? " " . $hairTypeCode : "");
@@ -318,7 +322,7 @@ class HairDataFetcher {
     }
     
     /**
-     * Filter products based on hair type compatibility
+     * Filters the products based on hair type compatibility
      */
     private function filterProductsByHairType($products, $hairTypeInfo) {
         if (!$hairTypeInfo || empty($products)) {
@@ -383,7 +387,7 @@ class HairDataFetcher {
             }
         }
         
-        // Sort by compatibility score
+        // Sorts by compatibility score
         usort($filtered, function($a, $b) {
             $scoreA = $a['compatibility_score'] ?? 0;
             $scoreB = $b['compatibility_score'] ?? 0;
@@ -394,12 +398,12 @@ class HairDataFetcher {
     }
     
     /**
-     * Fetch from curated database (fallback)
+     * Fetches from curated database (a fallback)
      */
     private function fetchFromCuratedDatabase($hairType = null, $category = null, $hairTypeInfo = null) {
         $products = [];
         
-        // Get products from database that match hair type
+        // Gets products from database that match hair type
         if ($hairType) {
             $stmt = $this->conn->prepare("
                 SELECT p.*, phc.compatibility_score
@@ -435,7 +439,7 @@ class HairDataFetcher {
     }
     
     /**
-     * Fetch URL content using cURL
+     * Fetchs the URL content using cURL
      */
     private function fetchURL($url) {
         $ch = curl_init();
@@ -471,50 +475,51 @@ class HairDataFetcher {
     }
     
     /**
-     * Parse Amazon search results
+     * Parses Amazon search results
+     * Used AI for this function
      */
     private function parseAmazonResults($html) {
         $products = [];
         
-        // Use DOMDocument to parse HTML
+        // Uses DOMDocument to parse HTML
         libxml_use_internal_errors(true);
         $dom = new DOMDocument();
         @$dom->loadHTML($html);
         $xpath = new DOMXPath($dom);
         
-        // Amazon product selectors (these may need to be updated as Amazon changes their HTML)
+        // Amazon product selectors 
         $productNodes = $xpath->query("//div[contains(@class, 's-result-item')]");
         
         foreach ($productNodes as $node) {
             $product = [];
             
-            // Extract product name
+            // Extracts product name
             $nameNodes = $xpath->query(".//h2//span", $node);
             if ($nameNodes->length > 0) {
                 $product['product_name'] = trim($nameNodes->item(0)->textContent);
             }
             
-            // Extract price
+            // Extracts price
             $priceNodes = $xpath->query(".//span[contains(@class, 'a-price')]//span[contains(@class, 'a-offscreen')]", $node);
             if ($priceNodes->length > 0) {
                 $priceText = $priceNodes->item(0)->textContent;
                 $product['price'] = $this->extractPrice($priceText);
             }
             
-            // Extract rating
+            // Extracts rating
             $ratingNodes = $xpath->query(".//span[contains(@class, 'a-icon-alt')]", $node);
             if ($ratingNodes->length > 0) {
                 $ratingText = $ratingNodes->item(0)->textContent;
                 $product['rating'] = $this->extractRating($ratingText);
             }
             
-            // Extract image
+            // Extracts image
             $imgNodes = $xpath->query(".//img[@data-image-latency]", $node);
             if ($imgNodes->length > 0) {
                 $product['image_url'] = $imgNodes->item(0)->getAttribute('src');
             }
             
-            // Extract link
+            // Extracts the link
             $linkNodes = $xpath->query(".//h2//a", $node);
             if ($linkNodes->length > 0) {
                 $href = $linkNodes->item(0)->getAttribute('href');
@@ -531,7 +536,7 @@ class HairDataFetcher {
     }
     
     /**
-     * Parse Ulta search results
+     * Parses Ulta search results
      */
     private function parseUltaResults($html) {
         $products = [];
@@ -547,13 +552,13 @@ class HairDataFetcher {
         foreach ($productNodes as $node) {
             $product = [];
             
-            // Extract product name
+            // Extracts the product name
             $nameNodes = $xpath->query(".//h4//a", $node);
             if ($nameNodes->length > 0) {
                 $product['product_name'] = trim($nameNodes->item(0)->textContent);
             }
             
-            // Extract price
+            // Extracts the price
             $priceNodes = $xpath->query(".//span[contains(@class, 'price')]", $node);
             if ($priceNodes->length > 0) {
                 $product['price'] = $this->extractPrice($priceNodes->item(0)->textContent);
@@ -575,7 +580,7 @@ class HairDataFetcher {
     }
     
     /**
-     * Parse Sephora search results
+     * Parses Sephora search results
      */
     private function parseSephoraResults($html) {
         $products = [];
@@ -591,19 +596,19 @@ class HairDataFetcher {
         foreach ($productNodes as $node) {
             $product = [];
             
-            // Extract product name
+            // Extracts the product name
             $nameNodes = $xpath->query(".//a[contains(@class, 'product-name')]", $node);
             if ($nameNodes->length > 0) {
                 $product['product_name'] = trim($nameNodes->item(0)->textContent);
             }
             
-            // Extract price
+            // Extracts the price
             $priceNodes = $xpath->query(".//span[contains(@class, 'price')]", $node);
             if ($priceNodes->length > 0) {
                 $product['price'] = $this->extractPrice($priceNodes->item(0)->textContent);
             }
             
-            // Extract rating
+            // Extracts the rating
             $ratingNodes = $xpath->query(".//span[contains(@class, 'rating')]", $node);
             if ($ratingNodes->length > 0) {
                 $product['rating'] = $this->extractRating($ratingNodes->item(0)->textContent);
@@ -619,7 +624,8 @@ class HairDataFetcher {
     }
     
     /**
-     * Extract price from text
+     * Extracts the price from text
+     * Used AI for this function
      */
     private function extractPrice($text) {
         // Remove currency symbols and extract number
@@ -631,7 +637,8 @@ class HairDataFetcher {
     }
     
     /**
-     * Extract rating from text
+     * Extracts the rating from text
+     * Used AI for this function
      */
     private function extractRating($text) {
         // Extract rating (usually 1-5)
@@ -649,7 +656,7 @@ class HairDataFetcher {
     }
     
     /**
-     * Fetch hair care methods and tips from online
+     * Fetchs hair care methods and tips from online
      */
     public function fetchGrowthMethods($hairType = null) {
         $methods = [];
@@ -780,7 +787,7 @@ class HairDataFetcher {
     }
     
     /**
-     * Determine product category from name
+     * Determines the product category from name
      */
     private function determineCategory($productName) {
         $name = strtolower($productName);

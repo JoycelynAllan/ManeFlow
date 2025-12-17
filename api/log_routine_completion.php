@@ -1,6 +1,6 @@
 <?php
 /**
- * Log routine completion
+ * Logs routine completion
  */
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -26,7 +26,7 @@ if (!$routineId) {
 
 $conn = getDBConnection();
 
-// Verify routine belongs to user
+// Verifies routine belongs to user
 $verifyStmt = $conn->prepare("
     SELECT r.routine_id, r.profile_id
     FROM hair_care_routines r

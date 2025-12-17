@@ -6,7 +6,7 @@ ini_set('display_errors', 1);
 require_once 'config/db.php';
 
 
-// Check if user is logged in
+// Checks if user is logged in
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
@@ -26,8 +26,8 @@ try {
     if (isset($_GET['child_id'])) {
         $childId = (int)$_GET['child_id'];
         
-        // Verify this child belongs to the current user (parent) using direct query
-        // Replacing stored procedure to avoid issues on servers without routine permissions
+        // Verifies this child belongs to the current user (parent) using direct query
+        // Replaces stored procedure to avoid issues on servers without routine permissions
         $verifyStmt = $conn->prepare("SELECT user_id FROM users WHERE user_id = ? AND parent_user_id = ? AND is_child_account = 1");
         $verifyStmt->bind_param("ii", $childId, $userId);
         $verifyStmt->execute();
@@ -39,7 +39,7 @@ try {
             $userId = $childId; // Switch context to child
             $isViewingChild = true;
             
-            // Get child name and DOB
+            // Gets child name and DOB
             $childNameStmt = $conn->prepare("SELECT first_name, date_of_birth FROM users WHERE user_id = ?");
             $childNameStmt->bind_param("i", $childId);
             $childNameStmt->execute();
@@ -51,21 +51,21 @@ try {
         }
     }
     
-    // Determine User/Child DOB and Age Group
+    //Determines User/Child DOB and Age Group
     $userDob = null;
     if ($isViewingChild && $childInfo) {
         $userDob = $childInfo['date_of_birth'];
     } else {
-         // Get user DOB
+         // Gets user DOB
          $userStmt = $conn->prepare("SELECT date_of_birth FROM users WHERE user_id = ?");
-         $userStmt->bind_param("i", $_SESSION['user_id']); // Use session user_id for parent's DOB
+         $userStmt->bind_param("i", $_SESSION['user_id']); 
          $userStmt->execute();
          $userResult = $userStmt->get_result()->fetch_assoc();
          $userDob = $userResult['date_of_birth'] ?? null;
          $userStmt->close();
     }
 
-    $ageGroup = 'adult'; // Default
+    $ageGroup = 'adult'; 
     if ($userDob) {
         $age = (new DateTime())->diff(new DateTime($userDob))->y;
         if ($age < 13) $ageGroup = 'child';
@@ -76,7 +76,7 @@ try {
         else $ageGroup = 'senior';
     }
 
-    // Get user's profile
+    // Gets user's profile
     $profileStmt = $conn->prepare("SELECT * FROM user_hair_profiles WHERE user_id = ? LIMIT 1");
     if (!$profileStmt) {
         throw new Exception("Profile query failed: " . $conn->error);
@@ -87,7 +87,7 @@ try {
     $profileStmt->close();
     
 
-    // Get age-specific concerns
+    // Gets age-specific concerns
     $ageSymptoms = [];
     $symptomsStmt = $conn->prepare("SELECT age_concern_id as symptom_id, concern_name as symptom_name, description, 'Age Related' as category FROM age_specific_concerns WHERE age_group = ?");
     if ($symptomsStmt) {
@@ -101,14 +101,14 @@ try {
         $symptomsStmt->close();
     }
     
-    // Get generic symptoms
+    // Gets generic symptoms
     $genericSymptoms = [];
     $symptomsStmt = $conn->prepare("SELECT symptom_id, symptom_name, description, category FROM hair_symptoms ORDER BY category, symptom_name");
     if ($symptomsStmt) {
         $symptomsStmt->execute();
         $res = $symptomsStmt->get_result();
         while ($row = $res->fetch_assoc()) {
-            $row['id_prefix'] = 'gen_'; // Add prefix for API distinction
+            $row['id_prefix'] = 'gen_'; // Adds prefix for API distinction
             $genericSymptoms[] = $row;
         }
         $symptomsStmt->close();
@@ -117,7 +117,7 @@ try {
     // Merge: Age symptoms first, then generic
     $allSymptoms = array_merge($ageSymptoms, $genericSymptoms);
     
-    // Get user's past diagnoses
+    // Gets user's past diagnoses
     if ($profile) {
         $diagnosesStmt = $conn->prepare("
             SELECT * FROM user_diagnoses 
@@ -196,7 +196,7 @@ include 'includes/header.php';
                     $symptomsByCategory[$category][] = $symptom;
                 }
                 
-                // Ensure "Age Related" comes first if it exists
+                // Ensures "Age Related" comes first if it exists
                 if (isset($symptomsByCategory['Age Related'])) {
                     $ageCat = $symptomsByCategory['Age Related'];
                     unset($symptomsByCategory['Age Related']);
@@ -374,16 +374,9 @@ document.addEventListener('DOMContentLoaded', function() {
             response.solutions.forEach(solution => {
                 html += '<div class="solution-card">';
                 html += '<h4>' + solution.solution_name + '</h4>';
-                // html += '<span class="solution-type">' + (solution.solution_type || 'Advice') + '</span>';
                 if (solution.description) {
                     html += '<p>' + solution.description + '</p>';
-                }
-                // if (solution.instructions) {
-                //     html += '<p><strong>Instructions:</strong> ' + solution.instructions + '</p>';
-                // }
-                // if (solution.expected_timeframe) {
-                //     html += '<p><i class="fas fa-clock"></i> Expected timeframe: ' + solution.expected_timeframe + '</p>';
-                // }
+                }  
                 html += '</div>';
             });
             html += '</div>';

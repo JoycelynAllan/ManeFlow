@@ -2,11 +2,11 @@
 // Load environment variables
 require_once __DIR__ . '/env.php';
 
-// Database configuration - use environment variables if available, otherwise use defaults
+// Database configuration 
 // Determine environment
 $isProd = false;
 if (isset($_SERVER['HTTP_HOST'])) {
-    // Check if running on the production server IP or domain
+    // Checks if running on the production server IP or domain
     $host = $_SERVER['HTTP_HOST'];
     if (strpos($host, '169.239.251.102') !== false || strpos($host, '159.239.251.102') !== false) { // Covering user provided IP
          $isProd = true;
@@ -27,7 +27,7 @@ if ($isProd) {
 
 define('DB_PORT', env('DB_PORT', 3306));
 
-// Create database connection
+// Creates database connection
 function getDBConnection() {
     try {
         $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
@@ -43,7 +43,7 @@ function getDBConnection() {
     }
 }
 
-// Start session if not already started
+// Starts session if not already started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

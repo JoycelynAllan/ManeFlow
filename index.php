@@ -8,7 +8,7 @@ if (isset($_SESSION['user_id'])) {
 }
 
 $pageTitle = 'Home';
-// Add body class for home page styling
+// Adds body class for home page styling
 $bodyClass = 'home-page';
 include 'includes/header.php';
 ?>

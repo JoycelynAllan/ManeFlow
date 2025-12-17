@@ -443,4 +443,4 @@ For issues or questions:
 
 ---
 
-**Enjoy your personalized hair growth journey with ManeFlow!** 🌟💇‍♀️✨
+**Enjoy your personalized hair growth journey with ManeFlow!** 

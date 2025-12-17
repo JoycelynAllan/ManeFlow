@@ -11,7 +11,7 @@ if (!isset($_SESSION['user_id'])) {
 $userId = $_SESSION['user_id'];
 $conn = getDBConnection();
 
-// Get user's profile
+// Gets user's profile
 $profileStmt = $conn->prepare("SELECT * FROM user_hair_profiles WHERE user_id = ? LIMIT 1");
 $profileStmt->bind_param("i", $userId);
 $profileStmt->execute();

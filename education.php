@@ -1,7 +1,7 @@
 <?php
 require_once 'config/db.php';
 
-// Check if user is logged in
+// Checks if user is logged in
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
@@ -14,8 +14,8 @@ $childInfo = null;
 if (isset($_GET['child_id'])) {
     $childId = (int)$_GET['child_id'];
     
-    // Verify this child belongs to the current user (parent) using direct query
-    // Replacing stored procedure to avoid issues on servers without routine permissions
+    // Verifies this child belongs to the current user (parent) using direct query
+    // Replaces stored procedure to avoid issues on servers without routine permissions
     $verifyStmt = $conn->prepare("SELECT user_id FROM users WHERE user_id = ? AND parent_user_id = ? AND is_child_account = 1");
     $verifyStmt->bind_param("ii", $childId, $_SESSION['user_id']);
     $verifyStmt->execute();
@@ -26,7 +26,7 @@ if (isset($_GET['child_id'])) {
     if ($isValid) {
         $isViewingChild = true;
         
-        // Get child name
+        // Gets child name
         $childNameStmt = $conn->prepare("SELECT first_name FROM users WHERE user_id = ?");
         $childNameStmt->bind_param("i", $childId);
         $childNameStmt->execute();
@@ -38,19 +38,19 @@ if (isset($_GET['child_id'])) {
     }
 }
 
-// Get all hair types with detailed information
+// Gets all hair types with detailed information
 $hairTypesStmt = $conn->prepare("SELECT * FROM hair_types ORDER BY type_code");
 $hairTypesStmt->execute();
 $hairTypes = $hairTypesStmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $hairTypesStmt->close();
 
-// Get all growth methods
+// Gets all growth methods
 $methodsStmt = $conn->prepare("SELECT * FROM growth_methods ORDER BY method_name");
 $methodsStmt->execute();
 $methods = $methodsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $methodsStmt->close();
 
-// Get educational content if any
+// Gets educational content if any
 $contentStmt = $conn->prepare("SELECT * FROM educational_content ORDER BY published_at DESC, created_at DESC LIMIT 10");
 $contentStmt->execute();
 $educationalContent = $contentStmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -79,7 +79,7 @@ include 'includes/header.php';
         <?php endif; ?>
     </div>
     
-    <!-- Hair Types Section -->
+    <!-- Hair Types Section-->
     <section class="education-section">
         <h2><i class="fas fa-info-circle"></i> Understanding Hair Types</h2>
         <p class="section-intro">
@@ -90,7 +90,7 @@ include 'includes/header.php';
         <div class="hair-types-grid">
             <?php if (!empty($hairTypes)): ?>
                 <?php 
-                // Group hair types by category
+                // Groups hair types based on category
                 $groupedTypes = [];
                 foreach ($hairTypes as $type) {
                     $category = $type['category'];

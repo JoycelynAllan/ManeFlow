@@ -4,7 +4,7 @@ ini_set('display_errors', 1);
 
 require_once 'config/db.php';
 
-// Check if user is logged in
+// Checks if user is logged in
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
@@ -32,7 +32,7 @@ if (isset($_GET['child_id'])) {
         $userId = $childId; // Switch context to child
         $isViewingChild = true;
         
-        // Get child name
+        // Gets child name
         $childNameStmt = $conn->prepare("SELECT first_name FROM users WHERE user_id = ?");
         $childNameStmt->bind_param("i", $childId);
         $childNameStmt->execute();
@@ -50,10 +50,8 @@ $progressEntries = [];
 $forecasts = [];
 $growthRate = null;
 
-try {
-    // $conn is already initialized header
-    
-    // Get user's profile
+try {    
+    // Gets user's profile
     $profileStmt = $conn->prepare("SELECT * FROM user_hair_profiles WHERE user_id = ? LIMIT 1");
     if (!$profileStmt) {
         throw new Exception("Profile query failed: " . $conn->error);
@@ -64,7 +62,7 @@ try {
     $profileStmt->close();
     
     if ($profile) {
-        // Get growth progress entries
+        // Gets growth progress entries
         $progressStmt = $conn->prepare("
             SELECT * FROM hair_growth_progress 
             WHERE profile_id = ? 
@@ -78,7 +76,7 @@ try {
             $progressStmt->close();
         }
         
-        // Get forecasts
+        // Gets forecasts
         $forecastStmt = $conn->prepare("
             SELECT * FROM growth_forecasts 
             WHERE profile_id = ? 
@@ -92,7 +90,8 @@ try {
             $forecastStmt->close();
         }
         
-        // Calculate current growth rate if we have enough data
+        // Calculates current growth rate if we have enough data
+        //Used AI here
         if (count($progressEntries) >= 2) {
             $latest = $progressEntries[0];
             $oldest = $progressEntries[count($progressEntries) - 1];
@@ -306,6 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
             forecastDataPoints.push(parseFloat(forecast.predicted_length));
         });
         
+        //used AI here
         new Chart(ctx, {
             type: 'line',
             data: {
@@ -341,7 +341,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     <?php endif; ?>
     
-    // Generate forecast button
+    // Generates forecast button
     const generateBtn = document.getElementById('generateForecast');
     console.log('Generate button found:', generateBtn);
     

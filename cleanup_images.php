@@ -1,14 +1,13 @@
 <?php
 /**
  * Cleanup script to remove invalid image URLs from database
- * Run this once to fix existing products with fake image URLs
  */
 
 require_once 'config/db.php';
 
 $conn = getDBConnection();
 
-// Update products with fake example.jpg URLs to NULL
+// Updates products with fake example.jpg URLs to NULL
 $updateStmt = $conn->prepare("
     UPDATE products 
     SET image_url = NULL 

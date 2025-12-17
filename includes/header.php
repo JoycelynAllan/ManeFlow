@@ -16,7 +16,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
     <meta name="theme-color" content="#6B5B73">
     <link rel="manifest" href="manifest.json">
     <?php 
-    // Check if we should load the child theme
+    // Checks if we should load the child theme
     $shouldLoadChildTheme = (isset($isViewingChild) && $isViewingChild) || 
                            (basename($_SERVER['PHP_SELF']) == 'children.php');
     
@@ -25,7 +25,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
     <link rel="stylesheet" href="css/child-theme.css">
     <?php endif; ?>
     <script>
-        // Register service worker for offline mode
+        // Registers service worker for offline mode
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
                 navigator.serviceWorker.register('sw.js')
@@ -38,7 +38,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
             });
         }
         
-        // Cache offline data when online
+        // Caches offline data when online
         function cacheOfflineData() {
             if (navigator.onLine && 'caches' in window) {
                 fetch('api/offline_data.php?type=all')
@@ -54,12 +54,12 @@ $isLoggedIn = isset($_SESSION['user_id']);
             }
         }
         
-        // Cache data on page load if online
+        // Caches data on page load if online
         if (navigator.onLine) {
             cacheOfflineData();
         }
         
-        // Listen for online/offline events
+        // Listens for online/offline events
         window.addEventListener('online', function() {
             console.log('Back online - syncing data');
             cacheOfflineData();

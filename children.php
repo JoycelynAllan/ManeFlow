@@ -1,7 +1,7 @@
 <?php
 require_once 'config/db.php';
 
-// Check if user is logged in
+// Checks if user is logged in
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 $userId = $_SESSION['user_id'];
 $conn = getDBConnection();
 
-// Check if parent_user_id column exists
+// Checks if parent_user_id column exists
 $checkColumn = $conn->query("SHOW COLUMNS FROM `users` LIKE 'parent_user_id'");
 if ($checkColumn->num_rows === 0) {
     $conn->close();
@@ -36,22 +36,22 @@ if ($checkColumn->num_rows === 0) {
 $error = '';
 $success = '';
 
-// Check for success message from redirect
+// Checks for success message from redirect
 if (isset($_GET['success'])) {
     $success = urldecode($_GET['success']);
 }
 
-// Enable error reporting for debugging (remove in production)
+// Enables error reporting for debugging (remove in production)
 error_reporting(E_ALL);
-ini_set('display_errors', 0); // Don't display on page, but log them
+ini_set('display_errors', 0); 
 
-// Handle form submissions
+// Handles form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     error_log("POST request received. POST data: " . print_r($_POST, true));
     
     if (isset($_POST['add_child'])) {
         error_log("add_child button was clicked");
-        // Add a new child account using stored procedure
+        // Adds a new child account using stored procedure
         $childFirstName = trim($_POST['child_first_name'] ?? '');
         $childLastName = trim($_POST['child_last_name'] ?? '');
         $childGender = $_POST['child_gender'] ?? 'female';
@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Please enter the child\'s date of birth.';
             error_log("Validation failed - Date of Birth is empty. Received: '" . ($_POST['child_date_of_birth'] ?? 'NOT SET') . "'");
         } else {
-            // Validate date of birth format - try multiple formats
+            // Validate date of birth format 
             $dob = null;
             $dateFormats = ['Y-m-d', 'd/m/Y', 'm/d/Y', 'Y/m/d'];
             
@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Invalid date of birth format. Please use YYYY-MM-DD format (e.g., 2019-03-14).';
                 error_log("Date validation failed for: '$childDateOfBirth'");
             } else {
-                // Validate child age first
+                // Validates child age first
                 $today = new DateTime();
                 $dob = new DateTime($childDateOfBirth);
                 $age = $today->diff($dob)->y;
@@ -94,10 +94,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } elseif ($age < 0 || $age > 12) {
                     $error = 'Please enter a valid date of birth for a child (under 13 years old).';
                 } else {
-                    // Use direct insert method (simpler and more reliable)
+                    // Uses direct insert method 
                     $childCreated = false;
                     
-                    // Generate a unique email for the child account
+                    // Generates a unique email for the child account
                     $parentEmailStmt = $conn->prepare("SELECT email FROM users WHERE user_id = ?");
                     if (!$parentEmailStmt) {
                         $error = 'Failed to get parent email: ' . $conn->error;
@@ -135,12 +135,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     $error = 'Failed to prepare insert statement: ' . $conn->error;
                                     error_log("Prepare error: " . $conn->error);
                                 } else {
-                                    // Log all values being inserted
+                                    // Logs all values being inserted
                                     error_log("Binding parameters - Email: $childEmail, FirstName: $childFirstName, LastName: $childLastName, Gender: $childGender, DOB: $childDateOfBirth, ParentID: $userId, Age: $age");
                                     
                                     $insertStmt->bind_param("ssssssii", $childEmail, $childPasswordHash, $childFirstName, $childLastName, $childGender, $childDateOfBirth, $userId, $age);
                                     
-                                    // Enable error reporting for this operation
+                                    // Enables error reporting for this operation
                                     mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
                                     
                                     try {
@@ -148,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             $childUserId = $conn->insert_id;
                                             error_log("SUCCESS: Child account created with ID: $childUserId, email: $childEmail");
                                             
-                                            // Log the activity if table exists with manual ID
+                                            // Logs the activity if table exists with manual ID
                                             $logId = 1;
                                             $maxLogStmt = $conn->prepare("SELECT MAX(log_id) as max_id FROM parent_child_activity_log");
                                             if ($maxLogStmt) {
@@ -166,10 +166,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 $logStmt->close();
                                             }
                                             
-                                            // Close connection before redirect
+                                            // Closes connection before redirect
                                             $conn->close();
                                             
-                                            // Redirect to show the new child in the list
+                                            // Redirects to show the new child in the list
                                             header("Location: children.php?success=" . urlencode("Child account created successfully for {$childFirstName}! The account email is: {$childEmail}"));
                                             exit;
                                         } else {

@@ -4,6 +4,7 @@
  */
 
 // Start output buffering and error handling
+//used AI for the buffering and error handling
 ob_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
@@ -40,7 +41,7 @@ if (isset($_GET['child_id'])) {
     $conn = getDBConnection();
     
     // Verify this child belongs to the current user (parent) using direct query
-    // Replacing stored procedure to avoid issues on servers without routine permissions
+    // Replacing stored procedure to avoid issues on servers 
     $verifyStmt = $conn->prepare("SELECT user_id FROM users WHERE user_id = ? AND parent_user_id = ? AND is_child_account = 1");
     $verifyStmt->bind_param("ii", $childId, $userId);
     $verifyStmt->execute();
@@ -49,7 +50,7 @@ if (isset($_GET['child_id'])) {
     $verifyStmt->close();
     
     if ($isValid) {
-        $userId = $childId; // Switch context to child
+        $userId = $childId;
     } else {
         ob_clean();
         http_response_code(403);
@@ -106,7 +107,6 @@ try {
     $checkStmt->close();
     
     // Determine the date to use
-    // Strategy: Find the next available date going backwards from today
     // This allows generating history quickly for testing forecasts
     $today = date('Y-m-d');
     $candidateDate = $today;
@@ -129,9 +129,7 @@ try {
     
     $measurementDate = $candidateDate;
     
-    // Check if we are "updating" (conceptually we are creating new, but if logic falls back to existing, we update)
-    // With the loop above, we will ALWAYS find a new date, so we will ALWAYS Insert.
-    // However, keeping update logic just in case we change strategy later or race conditions occur.
+    // Check if the program is "updating" 
     
     $existsStmt = $conn->prepare("SELECT progress_id FROM hair_growth_progress WHERE profile_id = ? AND measurement_date = ?");
     $existsStmt->bind_param("is", $profile['profile_id'], $measurementDate);

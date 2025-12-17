@@ -13,7 +13,7 @@ if (!isset($_SESSION['user_id'])) {
 $userId = $_SESSION['user_id'];
 $conn = getDBConnection();
 
-// Optional: Filter by read status
+// Optional: Filters by read status
 $filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
 $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 20;
 $offset = isset($_GET['offset']) ? intval($_GET['offset']) : 0;
@@ -26,7 +26,7 @@ if ($filter === 'unread') {
     $whereClause .= " AND is_read = 0";
 }
 
-// Get total unread count (separate from the list query)
+// Gets total unread count 
 $countQuery = "SELECT COUNT(*) as unread_count FROM user_notifications WHERE user_id = ? AND is_read = 0";
 $countStmt = $conn->prepare($countQuery);
 $countStmt->bind_param("i", $userId);
